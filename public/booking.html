@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>korenDriver - Solicitar Corrida</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Google Material Symbols -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+  <!-- Tailwind Theme Configuration -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#00e575',
+              dark: '#00b85c',
+              dim: 'rgba(0, 229, 117, 0.12)',
+              glow: 'rgba(0, 229, 117, 0.25)'
+            },
+            surface: {
+              main: '#0a0f14',
+              card: '#131920',
+              subtle: '#182029',
+              border: '#212a35'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-[#0a0f14] text-slate-100 min-h-screen flex flex-col items-center justify-start selection:bg-brand selection:text-black">
+
+  <main class="w-full max-w-md px-4 py-6 space-y-4">
+
+    <!-- Estado: Carregando -->
+    <div id="view-loading" class="flex flex-col items-center justify-center py-24 gap-3">
+      <div class="w-10 h-10 border-4 border-slate-700 border-t-brand rounded-full animate-spin"></div>
+      <p class="text-xs text-slate-400">Carregando dados do motorista...</p>
+    </div>
+
+    <!-- Estado: Erro / Link inválido -->
+    <div id="view-error" class="hidden flex-col items-center justify-center py-24 gap-3 text-center">
+      <div class="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+        <span class="material-symbols-outlined text-red-400 text-3xl">link_off</span>
+      </div>
+      <h2 class="text-base font-display font-bold text-white">Link inválido</h2>
+      <p class="text-xs text-slate-400 max-w-xs">Este link de corrida particular não existe ou não está mais ativo. Confira com o motorista.</p>
+    </div>
+
+    <!-- Estado: Formulário de Solicitação -->
+    <div id="view-form" class="hidden space-y-4 fade-in">
+
+      <!-- Cabeçalho do motorista -->
+      <div class="bg-gradient-to-br from-surface-card to-[#0d131a] p-4 rounded-2xl border border-surface-border">
+        <div class="flex items-center gap-3">
+          <div class="w-14 h-14 rounded-2xl bg-brand/15 border border-brand/40 flex items-center justify-center text-brand shrink-0">
+            <span class="material-symbols-outlined text-3xl">account_circle</span>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <h1 id="driver-name" class="font-display font-bold text-white text-base truncate">-</h1>
+              <span class="material-symbols-outlined text-brand text-base">verified</span>
+            </div>
+            <p id="driver-vehicle" class="text-xs text-slate-400 truncate">-</p>
+            <div class="flex items-center gap-1 mt-0.5">
+              <span class="material-symbols-outlined text-amber-400 text-sm">star</span>
+              <span id="driver-rating" class="text-xs font-semibold text-white">-</span>
+              <span id="driver-category" class="text-[9px] font-bold text-brand bg-brand/10 border border-brand/30 px-1.5 py-0.5 rounded-full ml-1">-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seletor de tipo de serviço -->
+      <div class="grid grid-cols-3 gap-2">
+        <button type="button" onclick="selectServiceType('corrida')" data-service="corrida" class="service-btn flex flex-col items-center gap-1 py-3 rounded-xl border transition">
+          <span class="material-symbols-outlined text-xl">directions_car</span>
+          <span class="text-[10px] font-semibold">Corrida</span>
+        </button>
+        <button type="button" onclick="selectServiceType('frete')" data-service="frete" class="service-btn flex flex-col items-center gap-1 py-3 rounded-xl border transition">
+          <span class="material-symbols-outlined text-xl">local_shipping</span>
+          <span class="text-[10px] font-semibold">Frete</span>
+        </button>
+        <button type="button" onclick="selectServiceType('entrega')" data-service="entrega" class="service-btn flex flex-col items-center gap-1 py-3 rounded-xl border transition">
+          <span class="material-symbols-outlined text-xl">package_2</span>
+          <span class="text-[10px] font-semibold">Entrega</span>
+        </button>
+      </div>
+
+      <!-- Formulário -->
+      <form id="form-booking" onsubmit="handleBookingSubmit(event)" class="bg-surface-card p-4 rounded-2xl border border-surface-border space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Seu Nome</label>
+          <input id="booking-name" type="text" required placeholder="Nome completo" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Seu WhatsApp</label>
+          <input id="booking-phone" type="text" required placeholder="(11) 91234-5678" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Origem</label>
+          <input id="booking-origin" type="text" required placeholder="Ex: Rua Silva Paulet, 100 - Aldeota, Fortaleza - CE" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+          <p class="text-[10px] text-slate-500 mt-1">Use o formato: Rua, Número - Bairro, Cidade - UF (assim o Maps encontra certinho)</p>
+        </div>
+
+        <!-- Paradas intermediárias (adicionadas dinamicamente) -->
+        <div id="booking-stops-list" class="space-y-2"></div>
+
+        <button type="button" onclick="addStop()" class="w-full py-2 rounded-xl border border-dashed border-surface-border text-slate-400 hover:text-brand hover:border-brand/50 text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+          <span class="material-symbols-outlined text-base">add_circle</span>
+          Adicionar Parada
+        </button>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Destino</label>
+          <input id="booking-destination" type="text" required placeholder="Ex: Av. Beira Mar, 500 - Meireles, Fortaleza - CE" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+          <p class="text-[10px] text-slate-500 mt-1">Use o formato: Rua, Número - Bairro, Cidade - UF (assim o Maps encontra certinho)</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Distância aprox. (km)</label>
+            <input id="booking-distance" type="number" step="0.1" min="0" value="5" oninput="updateEstimate()" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Tempo aprox. (min)</label>
+            <input id="booking-duration" type="number" min="0" value="15" oninput="updateEstimate()" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label id="booking-notes-label" class="block text-xs font-medium text-slate-300 mb-1">Observação (opcional)</label>
+          <textarea id="booking-notes" rows="2" placeholder="Detalhes extras" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none resize-none"></textarea>
+        </div>
+
+        <!-- Estimativa -->
+        <div class="bg-brand/10 border border-brand/30 rounded-xl p-3.5 flex items-center justify-between">
+          <div>
+            <p class="text-[10px] text-slate-300">Valor Estimado</p>
+            <p id="booking-estimate" class="text-xl font-display font-extrabold text-brand">R$ 0,00</p>
+          </div>
+          <span class="material-symbols-outlined text-brand text-2xl">payments</span>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-display font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition active:scale-95">
+          <span class="material-symbols-outlined text-lg">chat</span>
+          Solicitar via WhatsApp
+        </button>
+      </form>
+
+      <p class="text-center text-[10px] text-slate-500">Powered by <span class="text-brand font-semibold">korenDriver</span></p>
+    </div>
+  </main>
+
+  <style>
+    .service-btn { background: #131920; border-color: #212a35; color: #94a3b8; }
+    .service-btn.active { background: rgba(0, 229, 117, 0.12); border-color: #00e575; color: #00e575; }
+  </style>
+
+  <script type="module" src="/js/booking.js"></script>
+</body>
+</html>

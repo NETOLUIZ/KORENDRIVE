@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>korenDriver - Política de Privacidade</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: {
+        colors: { brand: { DEFAULT: '#00e575', dark: '#00b85c' }, surface: { main: '#0a0f14', card: '#131920', border: '#212a35' } },
+        fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Space Grotesk', 'sans-serif'] }
+      }}
+    }
+  </script>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-[#0a0f14] text-slate-200 min-h-screen">
+  <main class="max-w-2xl mx-auto px-5 py-10">
+    <a href="/" class="text-brand text-xs font-semibold hover:underline">&larr; Voltar pro koren</a>
+
+    <h1 class="font-display text-2xl font-bold text-white mt-4 mb-1">Política de Privacidade</h1>
+    <p class="text-xs text-slate-500 mb-6">Versão v1-2026-09 · Última atualização: setembro de 2026</p>
+
+    <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-8 text-xs text-amber-200 leading-relaxed">
+      <strong class="text-amber-300">Aviso:</strong> este é um rascunho descrevendo, de forma honesta, o que o sistema koren realmente coleta e faz com os dados hoje. Ainda não foi revisado por um advogado e não deve ser tratado como o documento jurídico definitivo da empresa antes dessa revisão.
+    </div>
+
+    <div class="space-y-6 text-sm leading-relaxed text-slate-300">
+      <section>
+        <h2 class="font-display font-bold text-white text-base mb-2">1. Quem trata os seus dados</h2>
+        <p>O koren é um sistema operado pela Korentech para gestão de motoristas parceiros, empresas administradoras e corridas particulares. Ao se cadastrar como motorista, seus dados pessoais são tratados pela Korentech e, quando você se cadastra através do link de convite de uma empresa parceira, também ficam visíveis para o administrador dessa empresa.</p>
+      </section>
+
+      <section>
+        <h2 class="font-display font-bold text-white text-base mb-2">2. Quais dados coletamos</h2>
+        <ul class="list-disc pl-5 space-y-1">
+          <li><strong class="text-white">Identificação:</strong> nome completo, CPF, e-mail, telefone/WhatsApp, endereço residencial.</li>
+          <li><strong class="text-white">Documentos:</strong> fotos da CNH (frente e verso) e do CRLV do veículo.</li>
+          <li><strong class="text-white">Veículo:</strong> placa, modelo, ano, cor, tipo de combustível, foto do automóvel.</li>
+          <li><strong class="text-white">Acesso:</strong> senha (armazenada com hash criptográfico, nunca em texto puro).</li>
+          <li><strong class="text-white">Localização:</strong> sua localização aproximada é usada para centralizar o mapa do Cockpit — não é armazenada no banco de dados, só usada em tempo real na tela.</li>
+          <li><strong class="text-white">Atividade:</strong> corridas registradas (incluindo nome e telefone de passageiros que você cadastra), despesas, tarifas praticadas, status online/offline.</li>
+          <li><strong class="text-white">Dados de quem solicita corrida pelo seu Link Direto:</strong> nome e WhatsApp de clientes que preenchem o formulário público de solicitação — esses dados vão direto pro seu WhatsApp via mensagem, não ficam armazenados no banco do koren.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="font-display font-bold text-white text-base mb-2">3. Para que usamos esses dados</h2>
+        <ul class="list-disc pl-5 space-y-1">
+          <li>Criar e autenticar sua conta de motorista;</li>
+          <li>Permitir que você registre e acompanhe corridas, despesas e tarifas;</li>
+          <li>Permitir que a empresa administradora (quando aplicável) gerencie os motoristas vinculados a ela;</li>
+          <li>Gerar o seu Link Direto de Corrida Particular, usado por passageiros pra te contatar;</li>
+          <li>Enviar uma mensagem de boas-vindas pelo WhatsApp quando você se cadastra.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="font-display font-bold text-white text-base mb-2">4. Com quem compartilhamos</h2>
+        <p>Não vendemos nem compartilhamos seus dados com terceiros para fins de publicidade. Compartilhamos dados apenas nestes casos:</p>
+        <ul class="list-disc pl-5 space-y-1 mt-2">
+          <li><strong class="text-white">Empresa administradora:</strong> se você se cadastrou via link de convite de um admin, ele vê seu nome, telefone, e-mail, status e avaliação — nunca CPF, endereço ou fotos de documentos.</li>
+          <li><strong class="text-white">Evolution API (WhatsApp):</strong> usamos esse serviço, hospedado em infraestrutura própria da Korentech, só para enviar a mensagem de boas-vindas. Seu número de telefone é compartilhado com esse serviço unicamente para esse fim.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="font-display font-bold text-white text-base mb-2">5. Como protegemos seus dados</h2>
+        <p>Senhas são armazenadas com hash criptográfico (scrypt), nunca em texto simples. O banco de dados usa políticas de segurança em nível de linha (Row-Level Security): tecnicamente, nenhum motorista consegue acessar dados de outro motorista pela plataforma, mesmo em caso de falha de programação nas telas do aplicativo.</p>
+      </section>
+
+      <section>
+        <h2 class="font-display font-bold text-white text-base mb-2">6. Por quanto tempo guardamos</h2>
+        <p>Guardamos seus dados enquanto sua conta estiver ativa. Se você excluir sua conta, seus dados de cadastro, veículos, despesas, corridas e tarifas são apagados permanentemente do banco de dados.</p>
+      </section>
+
+      <section>
+        <h2 class="font-display font-bold text-white text-base mb-2">7. Seus direitos</h2>
+        <p>Nos termos da Lei Geral de Proteção de Dados (Lei 13.709/2018), você pode, direto pela tela de Perfil do app:</p>
+        <ul class="list-disc pl-5 space-y-1 mt-2">
+          <li><strong class="text-white">Acessar e baixar</strong> uma cópia completa dos seus dados (botão "Baixar meus dados");</li>
+          <li><strong class="text-white">Corrigir</strong> dados incorretos, editando seu cadastro;</li>
+          <li><strong class="text-white">Excluir</strong> sua conta e todos os dados vinculados a ela (botão "Excluir minha conta");</li>
+          <li><strong class="text-white">Revogar seu consentimento</strong> a qualquer momento, o que na prática significa excluir sua conta, já que o cadastro depende desse consentimento.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="font-display font-bold text-white text-base mb-2">8. Contato</h2>
+        <p>Dúvidas sobre esta política ou sobre seus dados podem ser enviadas para <span class="text-brand">privacidade@korentech.com.br</span>.</p>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
