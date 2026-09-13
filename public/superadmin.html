@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>korenDriver - Painel do Super Admin</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Google Material Symbols -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+  <!-- Tailwind Theme Configuration (paleta exclusiva deste painel) -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            sabg0: '#09090b',
+            sabg1: '#0c0f12',
+            sabg2: '#11161b',
+            sacard: '#12181e',
+            saborder: 'rgba(255,255,255,0.08)',
+            satext1: '#f5f7f8',
+            satext2: '#8b949e',
+            sagreen: '#00e676',
+            sagreen2: '#00c853',
+            sared: '#ef4444',
+            sayellow: '#f59e0b'
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <link rel="stylesheet" href="/css/superadmin.css">
+</head>
+<body class="sa-root min-h-screen selection:bg-sagreen selection:text-black">
+
+  <!-- ==================== TELA DE LOGIN ==================== -->
+  <section id="view-login" class="min-h-screen flex items-center justify-center px-4 sa-fade-in">
+    <div class="w-full max-w-sm">
+      <div class="flex flex-col items-center text-center mb-7">
+        <div class="w-14 h-14 rounded-2xl bg-sagreen/10 border border-sagreen/25 flex items-center justify-center mb-4">
+          <span class="material-symbols-outlined text-sagreen text-3xl">shield_person</span>
+        </div>
+        <h1 class="text-2xl font-extrabold text-satext1 tracking-tight">koren<span class="text-sagreen">Driver</span></h1>
+        <p class="text-[13px] text-satext2 font-medium mt-1">Painel do Super Admin</p>
+      </div>
+
+      <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4 sa-card p-6">
+        <div>
+          <label class="block text-[13px] font-medium text-satext2 mb-1.5">E-mail</label>
+          <input id="login-email" type="email" required placeholder="superadmin@koren.app" class="w-full bg-sabg2 border border-saborder focus:border-sagreen rounded-xl px-3.5 py-2.5 text-sm text-satext1 placeholder-satext2/60 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-[13px] font-medium text-satext2 mb-1.5">Senha</label>
+          <div class="relative">
+            <input id="login-password" type="password" required placeholder="Sua senha" class="w-full bg-sabg2 border border-saborder focus:border-sagreen rounded-xl px-3.5 py-2.5 pr-10 text-sm text-satext1 placeholder-satext2/60 outline-none transition">
+            <button type="button" onclick="togglePasswordVisibility('login-password', 'login-password-icon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-satext2 hover:text-satext1">
+              <span id="login-password-icon" class="material-symbols-outlined text-lg">visibility</span>
+            </button>
+          </div>
+        </div>
+        <p id="login-error" class="hidden text-[13px] text-sared"></p>
+        <button id="btn-login-submit" type="submit" class="sa-btn-primary w-full py-3 rounded-xl text-sm flex items-center justify-center gap-2">
+          <span id="btn-login-icon" class="material-symbols-outlined text-xl">login</span>
+          <span id="btn-login-label">Entrar no Painel</span>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ==================== DASHBOARD ==================== -->
+  <div id="view-dashboard" class="hidden">
+    <div class="flex h-screen overflow-hidden">
+
+      <!-- Backdrop mobile -->
+      <div id="sidebar-backdrop" class="sa-sidebar-backdrop" onclick="closeMobileSidebar()"></div>
+
+      <!-- SIDEBAR -->
+      <aside id="sidebar" class="sa-sidebar flex flex-col shrink-0">
+        <div class="flex items-center justify-between px-4 h-16 border-b border-saborder shrink-0">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-sagreen/12 border border-sagreen/25 flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-sagreen text-lg">shield_person</span>
+            </div>
+            <span class="sa-logo-text font-bold text-satext1 text-[15px] tracking-tight truncate">koren<span class="text-sagreen">Admin</span></span>
+          </div>
+          <button onclick="toggleSidebarCollapse()" class="hidden lg:flex w-6 h-6 items-center justify-center text-satext2 hover:text-satext1 shrink-0">
+            <span id="sidebar-collapse-icon" class="material-symbols-outlined text-lg">left_panel_close</span>
+          </button>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto px-3 py-3">
+          <div class="sa-nav-section-label">Menu</div>
+          <div class="sa-nav-item active" data-page="dashboard" onclick="navigateSA('dashboard')">
+            <span class="material-symbols-outlined text-[20px]">dashboard</span>
+            <span class="sa-nav-label">Dashboard</span>
+          </div>
+          <div class="sa-nav-item" data-page="administradores" onclick="navigateSA('administradores')">
+            <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+            <span class="sa-nav-label">Administradores</span>
+          </div>
+          <div class="sa-nav-item" data-page="empresas" onclick="navigateSA('empresas')">
+            <span class="material-symbols-outlined text-[20px]">business</span>
+            <span class="sa-nav-label">Empresas</span>
+          </div>
+          <div class="sa-nav-item" data-page="assinaturas" onclick="navigateSA('assinaturas')">
+            <span class="material-symbols-outlined text-[20px]">workspace_premium</span>
+            <span class="sa-nav-label">Assinaturas</span>
+          </div>
+          <div class="sa-nav-item" data-page="pagamentos" onclick="navigateSA('pagamentos')">
+            <span class="material-symbols-outlined text-[20px]">payments</span>
+            <span class="sa-nav-label">Pagamentos</span>
+          </div>
+
+          <div class="sa-nav-section-label">Sistema</div>
+          <div class="sa-nav-item" data-page="relatorios" onclick="navigateSA('relatorios')">
+            <span class="material-symbols-outlined text-[20px]">monitoring</span>
+            <span class="sa-nav-label">Relatórios</span>
+          </div>
+          <div class="sa-nav-item" data-page="configuracoes" onclick="navigateSA('configuracoes')">
+            <span class="material-symbols-outlined text-[20px]">settings</span>
+            <span class="sa-nav-label">Configurações</span>
+          </div>
+        </nav>
+
+        <div class="sa-nav-label px-4 py-3.5 border-t border-saborder shrink-0 flex items-center gap-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-sagreen shrink-0"></span>
+          <span class="text-[11px] text-satext2">Sistema operacional</span>
+        </div>
+      </aside>
+
+      <!-- COLUNA DIREITA -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+
+        <!-- TOPBAR -->
+        <header class="sa-topbar h-16 shrink-0 flex items-center justify-between px-4 md:px-6 gap-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <button onclick="openMobileSidebar()" class="lg:hidden w-8 h-8 flex items-center justify-center text-satext2 hover:text-satext1 shrink-0">
+              <span class="material-symbols-outlined">menu</span>
+            </button>
+            <div class="min-w-0">
+              <h1 id="page-title" class="text-[17px] md:text-[19px] font-bold text-satext1 leading-tight truncate">Dashboard</h1>
+              <p id="page-subtitle" class="text-[12px] text-satext2 leading-tight truncate">Visão geral da plataforma</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 md:gap-3 shrink-0">
+            <div class="hidden md:flex items-center bg-sabg2 border border-saborder rounded-lg px-3 py-2 w-56 lg:w-72">
+              <span class="material-symbols-outlined text-satext2 text-lg mr-2">search</span>
+              <input id="topbar-search" type="text" placeholder="Buscar admins, empresas..." class="bg-transparent text-[13px] text-satext1 placeholder-satext2/60 outline-none w-full">
+            </div>
+
+            <button class="w-9 h-9 rounded-lg border border-saborder text-satext2 hover:text-satext1 hover:bg-white/5 flex items-center justify-center relative">
+              <span class="material-symbols-outlined text-[19px]">notifications</span>
+              <span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-sagreen"></span>
+            </button>
+
+            <div class="hidden sm:flex items-center gap-1.5 text-[11px] text-satext2 border border-saborder rounded-full px-2.5 py-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-sagreen"></span>
+              Sistema operacional
+            </div>
+
+            <div class="relative">
+              <button onclick="toggleUserMenu()" id="btn-user-menu" class="flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg hover:bg-white/5">
+                <div class="sa-avatar">SA</div>
+                <span class="hidden md:block text-[13px] font-medium text-satext1">Super Admin</span>
+                <span class="material-symbols-outlined text-satext2 text-lg">expand_more</span>
+              </button>
+              <div id="user-menu-dropdown" class="hidden absolute right-0 top-12 w-48 sa-dropdown p-1.5 z-30">
+                <div class="sa-dropdown-item">
+                  <span class="material-symbols-outlined text-[18px] text-satext2">person</span> Meu perfil
+                </div>
+                <div class="sa-dropdown-item">
+                  <span class="material-symbols-outlined text-[18px] text-satext2">settings</span> Configurações
+                </div>
+                <div class="h-px bg-saborder my-1"></div>
+                <div class="sa-dropdown-item" onclick="handleLogout()">
+                  <span class="material-symbols-outlined text-[18px] text-sared">logout</span> Sair
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- CONTEÚDO -->
+        <main class="flex-1 overflow-y-auto bg-sabg0">
+          <div class="max-w-[1600px] mx-auto px-4 md:px-6 py-6 space-y-5">
+
+            <!-- ===== PÁGINA: DASHBOARD ===== -->
+            <div id="page-dashboard">
+
+              <!-- KPI CARDS -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
+                <div class="sa-card p-5 sa-fade-in">
+                  <div class="flex items-center justify-between mb-4">
+                    <span class="text-[13px] text-satext2 font-medium">Total recebido</span>
+                    <div class="sa-kpi-icon" style="background:rgba(0,230,118,0.12)">
+                      <span class="material-symbols-outlined text-[18px]" style="color:#00e676">payments</span>
+                    </div>
+                  </div>
+                  <p id="kpi-received" class="text-[28px] font-extrabold text-satext1 leading-none mb-2">R$ 0,00</p>
+                  <p id="kpi-received-trend" class="text-[12px] text-satext2">—</p>
+                </div>
+
+                <div class="sa-card p-5 sa-fade-in">
+                  <div class="flex items-center justify-between mb-4">
+                    <span class="text-[13px] text-satext2 font-medium">Total em atraso</span>
+                    <div class="sa-kpi-icon" style="background:rgba(239,68,68,0.12)">
+                      <span class="material-symbols-outlined text-[18px]" style="color:#ef4444">error</span>
+                    </div>
+                  </div>
+                  <p id="kpi-overdue" class="text-[28px] font-extrabold text-satext1 leading-none mb-2">R$ 0,00</p>
+                  <p id="kpi-overdue-trend" class="text-[12px] text-satext2">—</p>
+                </div>
+
+                <div class="sa-card p-5 sa-fade-in">
+                  <div class="flex items-center justify-between mb-4">
+                    <span class="text-[13px] text-satext2 font-medium">Admins ativos</span>
+                    <div class="sa-kpi-icon" style="background:rgba(255,255,255,0.06)">
+                      <span class="material-symbols-outlined text-[18px] text-satext2">groups</span>
+                    </div>
+                  </div>
+                  <p id="kpi-count-em-dia" class="text-[28px] font-extrabold text-satext1 leading-none mb-2">0</p>
+                  <p id="kpi-count-em-dia-trend" class="text-[12px] text-satext2">—</p>
+                </div>
+
+                <div class="sa-card p-5 sa-fade-in">
+                  <div class="flex items-center justify-between mb-4">
+                    <span class="text-[13px] text-satext2 font-medium">Admins inadimplentes</span>
+                    <div class="sa-kpi-icon" style="background:rgba(239,68,68,0.12)">
+                      <span class="material-symbols-outlined text-[18px]" style="color:#ef4444">person_alert</span>
+                    </div>
+                  </div>
+                  <p id="kpi-count-inadimplente" class="text-[28px] font-extrabold text-satext1 leading-none mb-2">0</p>
+                  <p id="kpi-count-inadimplente-trend" class="text-[12px] text-satext2">—</p>
+                </div>
+              </div>
+
+              <!-- GRÁFICO PRINCIPAL: FATURAMENTO -->
+              <div class="sa-card p-5 mb-5">
+                <div class="flex flex-wrap items-start justify-between gap-3 mb-1">
+                  <div>
+                    <span class="text-[13px] font-semibold text-satext1">Faturamento mensal</span>
+                    <div class="flex items-baseline gap-2 mt-1">
+                      <span id="chart-revenue-total" class="text-[22px] font-extrabold text-satext1">R$ 0,00</span>
+                      <span id="chart-revenue-trend" class="text-[12px] font-semibold text-satext2">—</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1 bg-sabg2 border border-saborder rounded-lg p-1">
+                    <button class="sa-period-btn" data-period="7d" onclick="setRevenuePeriod('7d')">7 dias</button>
+                    <button class="sa-period-btn" data-period="30d" onclick="setRevenuePeriod('30d')">30 dias</button>
+                    <button class="sa-period-btn active" data-period="6m" onclick="setRevenuePeriod('6m')">6 meses</button>
+                    <button class="sa-period-btn" data-period="12m" onclick="setRevenuePeriod('12m')">12 meses</button>
+                  </div>
+                </div>
+                <p class="text-[11px] text-satext2 mb-3">Receita recorrente comprometida, por data de cadastro dos admins</p>
+
+                <div id="revenue-chart-wrap" class="relative w-full" style="height:260px;">
+                  <svg id="revenue-chart-svg" class="w-full h-full" preserveAspectRatio="none"></svg>
+                  <div id="revenue-chart-tooltip" class="sa-chart-tooltip"></div>
+                </div>
+
+                <div class="flex items-center gap-4 mt-2 text-[11px] text-satext2">
+                  <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:#00e676"></span>Recebido</span>
+                  <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:#ef4444"></span>Em atraso</span>
+                </div>
+              </div>
+
+              <!-- SEGUNDA LINHA: DONUT + RANKING -->
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+                <div class="sa-card p-5">
+                  <span class="text-[13px] font-semibold text-satext1">Status das assinaturas</span>
+                  <p class="text-[11px] text-satext2 mb-4">Distribuição por situação</p>
+
+                  <div class="flex items-center gap-6">
+                    <div class="relative shrink-0" style="width:150px;height:150px;">
+                      <svg id="subscription-donut" viewBox="0 0 120 120" class="w-full h-full -rotate-90"></svg>
+                      <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span id="donut-total" class="text-[22px] font-extrabold text-satext1 leading-none">0</span>
+                        <span class="text-[10px] text-satext2 mt-0.5">total</span>
+                      </div>
+                    </div>
+                    <div id="donut-legend" class="space-y-2.5 flex-1 min-w-0"></div>
+                  </div>
+                </div>
+
+                <div class="sa-card p-5">
+                  <span class="text-[13px] font-semibold text-satext1">Receita por administrador</span>
+                  <p class="text-[11px] text-satext2 mb-4">Ranking por mensalidade</p>
+                  <div id="admin-ranking-list" class="space-y-1"></div>
+                  <p id="admin-ranking-empty" class="hidden text-center text-satext2 text-[12px] py-8">Nenhum admin cadastrado ainda.</p>
+                </div>
+              </div>
+
+              <!-- CADASTRAR NOVO ADMIN -->
+              <div class="sa-card p-5 mb-5">
+                <span class="text-[13px] font-semibold text-satext1">Novo administrador</span>
+                <p class="text-[12px] text-satext2 mb-4">Cadastre um novo administrador para acessar a plataforma.</p>
+
+                <form id="form-new-admin" onsubmit="handleCreateAdmin(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-[12px] font-medium text-satext2 mb-1.5">Nome</label>
+                    <input id="new-admin-name" type="text" required class="w-full bg-sabg2 border border-saborder focus:border-sagreen rounded-lg px-3 py-2.5 text-[13px] text-satext1 outline-none transition">
+                  </div>
+                  <div>
+                    <label class="block text-[12px] font-medium text-satext2 mb-1.5">Empresa</label>
+                    <input id="new-admin-company" type="text" class="w-full bg-sabg2 border border-saborder focus:border-sagreen rounded-lg px-3 py-2.5 text-[13px] text-satext1 outline-none transition">
+                  </div>
+                  <div>
+                    <label class="block text-[12px] font-medium text-satext2 mb-1.5">E-mail</label>
+                    <input id="new-admin-email" type="email" required class="w-full bg-sabg2 border border-saborder focus:border-sagreen rounded-lg px-3 py-2.5 text-[13px] text-satext1 outline-none transition">
+                  </div>
+                  <div>
+                    <label class="block text-[12px] font-medium text-satext2 mb-1.5">Senha</label>
+                    <div class="relative">
+                      <input id="new-admin-password" type="password" required class="w-full bg-sabg2 border border-saborder focus:border-sagreen rounded-lg px-3 py-2.5 pr-10 text-[13px] text-satext1 outline-none transition">
+                      <button type="button" onclick="togglePasswordVisibility('new-admin-password', 'new-admin-password-icon')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-satext2 hover:text-satext1">
+                        <span id="new-admin-password-icon" class="material-symbols-outlined text-lg">visibility</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-[12px] font-medium text-satext2 mb-1.5">Mensalidade (R$)</label>
+                    <input id="new-admin-fee" type="number" step="0.01" min="0" value="99.90" required class="w-full bg-sabg2 border border-saborder focus:border-sagreen rounded-lg px-3 py-2.5 text-[13px] text-satext1 outline-none transition">
+                  </div>
+                  <div class="flex items-end">
+                    <button id="btn-create-admin" type="submit" class="sa-btn-primary w-full py-2.5 rounded-lg text-[13px] flex items-center justify-center gap-1.5">
+                      <span id="btn-create-admin-icon" class="material-symbols-outlined text-[18px]">add</span>
+                      <span id="btn-create-admin-label">Criar administrador</span>
+                    </button>
+                  </div>
+                </form>
+                <p id="create-admin-error" class="hidden text-[12px] text-sared mt-3"></p>
+              </div>
+
+              <!-- TABELA DE ADMINISTRADORES -->
+              <div class="sa-card p-5">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
+                  <div>
+                    <span class="text-[13px] font-semibold text-satext1">Administradores</span>
+                    <p class="text-[12px] text-satext2">Gerencie os administradores cadastrados.</p>
+                  </div>
+                  <span id="admin-count-label" class="text-[12px] text-satext2">0 admins</span>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 mt-4 mb-3">
+                  <div class="flex items-center bg-sabg2 border border-saborder rounded-lg px-3 py-2 flex-1 min-w-[180px]">
+                    <span class="material-symbols-outlined text-satext2 text-lg mr-2">search</span>
+                    <input id="table-search" oninput="renderAdminsTable()" type="text" placeholder="Buscar por nome, empresa ou e-mail" class="bg-transparent text-[13px] text-satext1 placeholder-satext2/60 outline-none w-full">
+                  </div>
+                  <select id="filter-status" onchange="renderAdminsTable()" class="bg-sabg2 border border-saborder rounded-lg px-3 py-2 text-[13px] text-satext1 outline-none">
+                    <option value="">Todos os status</option>
+                    <option value="active">Ativo</option>
+                    <option value="blocked">Bloqueado</option>
+                  </select>
+                  <select id="filter-payment" onchange="renderAdminsTable()" class="bg-sabg2 border border-saborder rounded-lg px-3 py-2 text-[13px] text-satext1 outline-none">
+                    <option value="">Todo pagamento</option>
+                    <option value="em_dia">Em dia</option>
+                    <option value="inadimplente">Inadimplente</option>
+                  </select>
+                  <button onclick="exportAdminsCsv()" class="sa-btn-secondary rounded-lg px-3.5 py-2 text-[13px] flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[18px]">download</span>
+                    Exportar
+                  </button>
+                </div>
+
+                <div class="overflow-x-auto -mx-5">
+                  <table class="w-full sa-table" style="min-width:720px;">
+                    <thead>
+                      <tr>
+                        <th>Admin</th>
+                        <th>Empresa</th>
+                        <th>Motoristas</th>
+                        <th>Mensalidade</th>
+                        <th>Status</th>
+                        <th>Pagamento</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="admins-table-body"></tbody>
+                  </table>
+                  <p id="admins-empty-msg" class="hidden text-center text-satext2 text-[13px] py-10">
+                    Nenhum admin encontrado.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== PÁGINA: PLACEHOLDER (Empresas / Assinaturas / Pagamentos / Relatórios / Configurações) ===== -->
+            <div id="page-placeholder" class="hidden">
+              <div class="sa-card p-12 flex flex-col items-center justify-center text-center gap-3" style="min-height: 360px;">
+                <div class="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center">
+                  <span id="placeholder-icon" class="material-symbols-outlined text-satext2 text-3xl">construction</span>
+                </div>
+                <h2 id="placeholder-title" class="text-[16px] font-bold text-satext1">Em breve</h2>
+                <p class="text-[13px] text-satext2 max-w-sm">Essa área ainda está em construção. Por enquanto, gerencie tudo pela aba Dashboard.</p>
+                <button onclick="navigateSA('dashboard')" class="sa-btn-secondary rounded-lg px-4 py-2 text-[13px] mt-2">Voltar ao Dashboard</button>
+              </div>
+            </div>
+
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 bg-sacard border border-sagreen/40 text-satext1 px-4 py-2.5 rounded-full text-[13px] shadow-2xl flex items-center gap-2 pointer-events-none transition-all duration-300 opacity-0 -translate-y-4 z-[100]">
+    <span class="material-symbols-outlined text-sagreen text-base">check_circle</span>
+    <span id="toast-msg">Mensagem</span>
+  </div>
+
+  <script type="module" src="/js/superadmin.js"></script>
+</body>
+</html>
