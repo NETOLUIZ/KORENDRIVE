@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - koren_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  koren-driver:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=${NODE_ENV:-production}
+      # DATABASE_URL: role restrita (koren_app), sem privilégio de superusuário — é
+      # a única forma do RLS realmente valer algo (superusuário sempre ignora RLS).
+      - DATABASE_URL=postgres://koren_app:${APP_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - APP_DB_PASSWORD=${APP_DB_PASSWORD}
+      # MIGRATION_DATABASE_URL: role de bootstrap (dono das tabelas), usada só na
+      # inicialização pra aplicar o schema e criar/atualizar a role koren_app.
+      - MIGRATION_DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL}
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}
+      # Evolution API — infraestrutura compartilhada da Korentech na VPS
+      - EVOLUTION_API_URL=${EVOLUTION_API_URL}
+      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
+      - EVOLUTION_INSTANCE_NAME=${EVOLUTION_INSTANCE_NAME:-Korendriver}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  koren_pg_data:
