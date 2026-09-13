@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>korenDriver - Painel do Admin</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Google Material Symbols -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+  <!-- Tailwind Theme Configuration -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#00e575',
+              dark: '#00b85c',
+              dim: 'rgba(0, 229, 117, 0.12)',
+              glow: 'rgba(0, 229, 117, 0.25)'
+            },
+            surface: {
+              main: '#0a0f14',
+              card: '#131920',
+              subtle: '#182029',
+              border: '#212a35'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-[#0a0f14] text-slate-100 min-h-screen selection:bg-brand selection:text-black">
+
+  <!-- ==================== TELA DE LOGIN ==================== -->
+  <section id="view-login" class="min-h-screen flex items-center justify-center px-4 fade-in">
+    <div class="w-full max-w-sm">
+      <div class="flex flex-col items-center text-center mb-6">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand/20 via-surface-card to-[#0d131a] border border-brand/40 flex items-center justify-center glow-brand mb-3">
+          <span class="material-symbols-outlined text-brand text-4xl">admin_panel_settings</span>
+        </div>
+        <h1 class="text-2xl font-display font-extrabold text-white tracking-tight">koren<span class="text-brand">Driver</span></h1>
+        <p class="text-xs text-brand font-medium tracking-wider uppercase mt-1">Painel do Admin</p>
+      </div>
+
+      <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4 bg-surface-card p-5 rounded-2xl border border-surface-border">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1.5">E-mail</label>
+          <input id="login-email" type="email" required placeholder="seu.email@empresa.com" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1.5">Senha</label>
+          <div class="relative">
+            <input id="login-password" type="password" required placeholder="Sua senha" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 pr-10 text-sm text-white placeholder-slate-500 outline-none transition">
+            <button type="button" onclick="togglePasswordVisibility('login-password', 'login-password-icon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+              <span id="login-password-icon" class="material-symbols-outlined text-lg">visibility</span>
+            </button>
+          </div>
+        </div>
+        <p id="login-error" class="hidden text-xs text-red-400"></p>
+        <button type="submit" class="w-full py-3 rounded-xl bg-brand hover:bg-brand-dark text-black font-display font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand/20 transition active:scale-[0.98]">
+          <span class="material-symbols-outlined text-xl">login</span>
+          Entrar no Painel
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ==================== DASHBOARD ==================== -->
+  <div id="view-dashboard" class="hidden fade-in">
+    <header class="w-full bg-[#0f141a]/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-50 px-4 md:px-8 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-dark to-brand flex items-center justify-center shadow-lg shadow-brand/20">
+          <span class="material-symbols-outlined text-black font-black text-xl">admin_panel_settings</span>
+        </div>
+        <div>
+          <span class="font-display font-bold text-white tracking-tight text-base">koren<span class="text-brand">Driver</span></span>
+          <span class="block text-[9px] text-brand uppercase font-mono tracking-widest leading-none">Painel do Admin</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="admin-company-name" class="text-xs text-slate-400 hidden sm:block"></span>
+        <button onclick="handleLogout()" class="w-8 h-8 rounded-lg bg-surface-card border border-surface-border flex items-center justify-center text-slate-400 hover:text-white">
+          <span class="material-symbols-outlined text-lg">logout</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 md:px-8 py-6 space-y-6">
+      <!-- Card do Link de Convite -->
+      <div class="bg-gradient-to-r from-surface-card to-[#121c27] p-4 rounded-2xl border border-surface-border space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-white flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-brand text-base">link</span>
+            Seu Link de Convite pra Motoristas Parceiros
+          </span>
+          <span class="text-[9px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">Ativo</span>
+        </div>
+
+        <div class="flex items-center justify-between bg-surface-subtle px-3 py-2.5 rounded-xl border border-surface-border">
+          <span id="invite-link-url" class="text-xs font-mono text-slate-300 truncate">-</span>
+          <button onclick="copyInviteLink()" class="text-brand hover:text-brand-dark text-xs font-bold ml-2 shrink-0 flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">content_copy</span>
+            <span id="btn-copy-label">Copiar</span>
+          </button>
+        </div>
+
+        <button onclick="shareInviteLinkWhatsApp()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-semibold text-xs flex items-center justify-center gap-2 transition shadow-md shadow-emerald-500/20">
+          <span class="material-symbols-outlined text-base">chat</span>
+          Enviar no WhatsApp
+        </button>
+        <p class="text-[10px] text-slate-500">Envie esse mesmo link pra cada motorista que quiser recrutar — todos que se cadastrarem por ele ficam vinculados a você.</p>
+      </div>
+
+      <!-- Tabela de Motoristas -->
+      <div class="bg-surface-card p-4 rounded-2xl border border-surface-border">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-display font-bold text-sm text-white">Seus Motoristas Parceiros</h3>
+          <span id="driver-count-label" class="text-[10px] text-slate-400">0 motoristas</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="text-slate-400 border-b border-surface-border">
+                <th class="py-2 pr-3 font-medium">Motorista</th>
+                <th class="py-2 pr-3 font-medium">Status</th>
+                <th class="py-2 pr-3 font-medium">Editar Tarifas</th>
+                <th class="py-2 pr-3 font-medium">Link Direto</th>
+              </tr>
+            </thead>
+            <tbody id="drivers-table-body"></tbody>
+          </table>
+          <p id="drivers-empty-msg" class="hidden text-center text-slate-500 text-xs py-8">
+            Nenhum motorista cadastrado ainda. Compartilhe seu link de convite pra começar.
+          </p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 bg-surface-card border border-brand text-white px-4 py-2 rounded-full text-xs shadow-2xl flex items-center gap-2 pointer-events-none transition-all duration-300 opacity-0 -translate-y-4 z-50">
+    <span class="material-symbols-outlined text-brand text-base">check_circle</span>
+    <span id="toast-msg">Mensagem</span>
+  </div>
+
+  <script type="module" src="/js/admin.js"></script>
+</body>
+</html>
