@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+  <title>korenDriver - Sistema Completo do Motorista</title>
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Google Material Symbols -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+  <!-- Tailwind Theme Configuration -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#00e575',
+              dark: '#00b85c',
+              dim: 'rgba(0, 229, 117, 0.12)',
+              glow: 'rgba(0, 229, 117, 0.25)'
+            },
+            surface: {
+              main: '#0a0f14',
+              card: '#131920',
+              subtle: '#182029',
+              border: '#212a35'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-[#0a0f14] text-slate-100 min-h-screen flex flex-col items-center justify-start pb-20 selection:bg-brand selection:text-black">
+
+  <!-- TOP BAR -->
+  <header class="w-full bg-[#0f141a]/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-50 px-3 py-2 flex items-center justify-start">
+    <!-- Brand Mini Logo -->
+    <div class="flex items-center gap-2 cursor-pointer" onclick="navigateTo('cockpit')">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-dark to-brand flex items-center justify-center shadow-lg shadow-brand/20">
+        <span class="material-symbols-outlined text-black font-black text-xl">navigation</span>
+      </div>
+      <div>
+        <span class="font-display font-bold text-white tracking-tight text-base">koren<span class="text-brand">Driver</span></span>
+        <span class="block text-[9px] text-brand uppercase font-mono tracking-widest leading-none">PRO Cockpit</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- APP CONTAINER (Mobile-First Frame centered, max-w-md or tablet responsive) -->
+  <main class="w-full max-w-md px-4 py-4 min-h-[calc(100vh-120px)] flex flex-col justify-start">
+
+    <!-- ==================== TELA 1: LOGIN ==================== -->
+    <section id="view-login" class="screen-view hidden fade-in w-full">
+      <div class="flex flex-col items-center text-center my-6">
+        <!-- Logo Grande korenDriver -->
+        <div class="relative mb-3 flex items-center justify-center">
+          <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand/20 via-surface-card to-[#0d131a] border border-brand/40 flex items-center justify-center glow-brand">
+            <span class="material-symbols-outlined text-brand text-5xl">electric_car</span>
+          </div>
+        </div>
+        <h1 class="text-3xl font-display font-extrabold text-white tracking-tight">koren<span class="text-brand">Driver</span></h1>
+        <p class="text-xs text-brand font-medium tracking-wider uppercase mt-1">Plataforma Oficial do Motorista</p>
+        <p class="text-sm text-slate-400 mt-3 max-w-xs">Bem-vindo, parceiro. Acesse sua conta para começar a rodar ou ver seu faturamento.</p>
+      </div>
+
+      <!-- Tabs de Login (CPF/Email vs SMS) -->
+      <div class="bg-surface-subtle p-1 rounded-xl flex border border-surface-border mb-4">
+        <button id="login-tab-email" class="flex-1 py-2 text-xs font-semibold rounded-lg bg-brand text-black shadow transition" onclick="switchLoginMethod('email')">
+          CPF / E-mail
+        </button>
+        <button id="login-tab-sms" class="flex-1 py-2 text-xs font-medium text-slate-400 hover:text-white transition" onclick="switchLoginMethod('sms')">
+          Código via SMS
+        </button>
+      </div>
+
+      <!-- Form Login -->
+      <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+        <div id="login-field-identifier">
+          <label class="block text-xs font-medium text-slate-300 mb-1.5">Identificação</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3.5 top-3 text-slate-500 text-lg">person</span>
+            <input id="login-input-id" type="text" value="joao.silva@koren.app" required placeholder="seu.email@exemplo.com ou CPF" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition">
+          </div>
+        </div>
+
+        <div id="login-field-password">
+          <div class="flex justify-between items-center mb-1.5">
+            <label class="block text-xs font-medium text-slate-300">Senha de Acesso</label>
+            <a href="#" class="text-xs text-brand hover:underline">Esqueceu?</a>
+          </div>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3.5 top-3 text-slate-500 text-lg">lock</span>
+            <input id="login-input-pwd" type="password" value="••••••••" required placeholder="Digite sua senha cadastrada" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-slate-500 outline-none transition">
+            <button type="button" onclick="togglePasswordVisibility('login-input-pwd')" class="absolute right-3 top-3 text-slate-500 hover:text-slate-300">
+              <span class="material-symbols-outlined text-lg">visibility</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked class="rounded border-slate-700 bg-surface-card text-brand focus:ring-brand">
+            <span>Lembrar meus dados</span>
+          </label>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 rounded-xl bg-brand hover:bg-brand-dark text-black font-display font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand/20 transition active:scale-[0.98]">
+          <span class="material-symbols-outlined text-xl">login</span>
+          Entrar na Conta
+        </button>
+
+        <div class="relative my-6 text-center">
+          <hr class="border-surface-border">
+          <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0a0f14] px-3 text-[10px] uppercase font-mono tracking-widest text-slate-500">Ou acesse com</span>
+        </div>
+
+        <!-- Biometria / Face ID -->
+        <button type="button" onclick="handleBiometricLogin()" class="w-full py-3 rounded-xl bg-surface-card hover:bg-surface-subtle border border-surface-border text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition">
+          <span class="material-symbols-outlined text-brand text-lg">fingerprint</span>
+          Acessar via Biometria / Face ID
+        </button>
+      </form>
+
+      <!-- Cadastro Link -->
+      <div class="mt-8 text-center bg-surface-card/60 p-4 rounded-xl border border-surface-border">
+        <p class="text-xs text-slate-400">Ainda não é um motorista parceiro?</p>
+        <button onclick="navigateTo('register-step1')" class="mt-2 text-brand text-xs font-semibold hover:underline flex items-center justify-center gap-1 w-full">
+          Cadastre-se agora e aumente seus ganhos
+          <span class="material-symbols-outlined text-sm">arrow_forward</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== TELA 2: CADASTRO PASSO 1 (DADOS PESSOAIS) ==================== -->
+    <section id="view-register-step1" class="screen-view hidden fade-in w-full">
+      <!-- Header do Passo -->
+      <div class="flex items-center justify-between mb-4">
+        <button onclick="navigateTo('login')" class="w-8 h-8 rounded-lg bg-surface-card border border-surface-border flex items-center justify-center text-slate-400 hover:text-white">
+          <span class="material-symbols-outlined text-lg">arrow_back</span>
+        </button>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand/20 text-brand border border-brand/30">PASSO 1 DE 2</span>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <h2 class="text-2xl font-display font-bold text-white">Criar sua Conta</h2>
+        <p class="text-xs text-slate-400">Preencha seus dados pessoais para iniciar o credenciamento.</p>
+      </div>
+
+      <p id="ref-banner" class="hidden mb-4 text-[11px] text-brand bg-brand/10 border border-brand/30 rounded-xl px-3 py-2 flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-sm">how_to_reg</span>
+        Cadastro via convite de parceiro
+      </p>
+
+      <!-- Stepper Visual -->
+      <div class="flex items-center gap-2 mb-6">
+        <div class="flex-1 h-1.5 rounded-full bg-brand shadow-sm shadow-brand/40"></div>
+        <div class="flex-1 h-1.5 rounded-full bg-surface-border"></div>
+      </div>
+
+      <form id="form-register-step1" onsubmit="handleRegisterStep1(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Nome Completo</label>
+          <input id="reg-name" type="text" required value="João Severo da Silva" placeholder="Seu nome completo" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">CPF</label>
+            <input id="reg-cpf" type="text" required value="123.456.789-10" placeholder="000.000.000-00" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">WhatsApp</label>
+            <input id="reg-phone" type="tel" required value="(11) 98765-4321" placeholder="(11) 99999-9999" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">E-mail</label>
+          <input id="reg-email" type="email" required value="joao.silva@koren.app" placeholder="exemplo@email.com" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Endereço Residencial</label>
+            <div class="relative">
+              <input id="reg-cep" type="text" inputmode="numeric" maxlength="9" value="01310-200" placeholder="CEP (ex: 01310-200)" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+              <span id="cep-status" class="hidden absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-brand"></span>
+            </div>
+            <p id="cep-error" class="hidden text-[10px] text-red-400 mt-1">CEP não encontrado. Preencha os dados manualmente.</p>
+          </div>
+
+          <div>
+            <input id="reg-street" type="text" value="Av. Paulista" placeholder="Rua / Avenida" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <input id="reg-number" type="text" value="1578" placeholder="Número" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+            <input id="reg-neighborhood" type="text" value="Bela Vista" placeholder="Bairro" class="col-span-2 w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <input id="reg-city" type="text" value="São Paulo" placeholder="Cidade" class="col-span-2 w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+            <input id="reg-state" type="text" maxlength="2" value="SP" placeholder="UF" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none uppercase text-center">
+          </div>
+        </div>
+
+        <!-- CNH Upload Boxes -->
+        <div class="pt-2">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-medium text-slate-300">Foto da CNH (Frente e Verso)</label>
+            <span class="text-[10px] text-brand font-medium">Verificação biométrica</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div onclick="document.getElementById('cnh-front-input').click()" class="bg-surface-card border border-brand/40 rounded-xl p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-subtle transition relative overflow-hidden" style="min-height:96px;">
+              <img id="cnh-front-preview" class="hidden absolute inset-0 w-full h-full object-cover">
+              <div id="cnh-front-placeholder" class="flex flex-col items-center relative z-10">
+                <span class="material-symbols-outlined text-brand text-2xl mb-1">photo_camera</span>
+                <span class="text-[11px] font-semibold text-white">Frente da CNH</span>
+                <span class="text-[9px] text-slate-400 mt-1">Toque para tirar foto</span>
+              </div>
+              <span id="cnh-front-badge" class="hidden absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[9px] text-brand font-semibold bg-black/70 px-2 py-0.5 rounded-full z-10 items-center gap-1">
+                <span class="material-symbols-outlined text-[11px] align-middle">check_circle</span> Capturada
+              </span>
+              <input id="cnh-front-input" type="file" accept="image/*" capture="environment" class="hidden" onchange="handleCnhCapture(event, 'front')">
+            </div>
+            <div onclick="document.getElementById('cnh-back-input').click()" class="bg-surface-card border border-brand/40 rounded-xl p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-subtle transition relative overflow-hidden" style="min-height:96px;">
+              <img id="cnh-back-preview" class="hidden absolute inset-0 w-full h-full object-cover">
+              <div id="cnh-back-placeholder" class="flex flex-col items-center relative z-10">
+                <span class="material-symbols-outlined text-brand text-2xl mb-1">photo_camera</span>
+                <span class="text-[11px] font-semibold text-white">Verso da CNH</span>
+                <span class="text-[9px] text-slate-400 mt-1">Toque para tirar foto</span>
+              </div>
+              <span id="cnh-back-badge" class="hidden absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[9px] text-brand font-semibold bg-black/70 px-2 py-0.5 rounded-full z-10 items-center gap-1">
+                <span class="material-symbols-outlined text-[11px] align-middle">check_circle</span> Capturada
+              </span>
+              <input id="cnh-back-input" type="file" accept="image/*" capture="environment" class="hidden" onchange="handleCnhCapture(event, 'back')">
+            </div>
+          </div>
+        </div>
+
+        <!-- Senha e Confirmação -->
+        <div class="pt-2">
+          <label class="block text-xs font-medium text-slate-300 mb-1">Criar Senha de Acesso</label>
+          <input id="reg-pwd" type="password" required value="senhaForte123@" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          <!-- Medidor de força da senha -->
+          <div class="flex items-center gap-1 mt-1.5">
+            <div class="flex-1 h-1 rounded-full bg-brand"></div>
+            <div class="flex-1 h-1 rounded-full bg-brand"></div>
+            <div class="flex-1 h-1 rounded-full bg-brand"></div>
+            <div class="flex-1 h-1 rounded-full bg-brand"></div>
+            <span class="text-[10px] text-brand font-semibold ml-1">Forte</span>
+          </div>
+        </div>
+
+        <div class="pt-1">
+          <label class="flex items-start gap-2 cursor-pointer text-xs text-slate-400">
+            <input id="reg-terms-accept" type="checkbox" required class="mt-0.5 rounded border-slate-700 bg-surface-card text-brand focus:ring-brand">
+            <span>Declaro que li e aceito os <a href="/termos-de-uso.html" target="_blank" class="text-brand hover:underline">Termos de Uso</a> e a <a href="/politica-de-privacidade.html" target="_blank" class="text-brand hover:underline">Política de Privacidade</a> da koren.</span>
+          </label>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 mt-4 rounded-xl bg-brand hover:bg-brand-dark text-black font-display font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand/20 transition">
+          Avançar para Veículo
+          <span class="material-symbols-outlined text-lg">arrow_forward</span>
+        </button>
+      </form>
+    </section>
+
+    <!-- ==================== TELA 3: CADASTRO PASSO 2 (VEÍCULO & DOCS) ==================== -->
+    <section id="view-register-step2" class="screen-view hidden fade-in w-full">
+      <div class="flex items-center justify-between mb-4">
+        <button onclick="navigateTo('register-step1')" class="w-8 h-8 rounded-lg bg-surface-card border border-surface-border flex items-center justify-center text-slate-400 hover:text-white">
+          <span class="material-symbols-outlined text-lg">arrow_back</span>
+        </button>
+        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand/20 text-brand border border-brand/30">VEÍCULO (ETAPA 2)</span>
+      </div>
+
+      <div class="mb-4">
+        <h2 class="text-2xl font-display font-bold text-white">Cadastrar Novo Veículo</h2>
+        <p class="text-xs text-slate-400">Informe os dados e documentos do automóvel.</p>
+      </div>
+
+      <form id="form-register-step2" onsubmit="handleRegisterStep2(event)" class="space-y-4">
+        <!-- Placa Mercosul Card -->
+        <div class="bg-surface-card p-4 rounded-xl border border-surface-border flex flex-col items-center">
+          <label class="text-xs text-slate-400 mb-2">Placa do Veículo (Padrão Mercosul)</label>
+          <div class="plate-mercosul mb-2">
+            <div class="plate-header">
+              <span>BRASIL</span>
+              <span class="text-[8px]">MERCOSUL</span>
+            </div>
+            <div class="plate-body">
+              <input id="reg-veh-plate" type="text" value="BRA2E19" maxlength="7" class="bg-transparent text-center font-extrabold uppercase outline-none w-full text-slate-900 tracking-wider">
+            </div>
+          </div>
+          <span class="text-[10px] text-slate-500">Toque na placa para alterar o código</span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Modelo / Marca</label>
+          <input id="reg-veh-model" type="text" required value="Chevrolet Onix Plus Premier" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Ano Fabricação</label>
+            <input id="reg-veh-year" type="number" required value="2023" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Cor</label>
+            <input id="reg-veh-color" type="text" required value="Prata Metálico" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          </div>
+        </div>
+
+        <!-- Tipo de Combustível -->
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1.5">Tipo de Combustível</label>
+          <div class="grid grid-cols-4 gap-2">
+            <button type="button" class="fuel-btn py-2 text-xs font-semibold rounded-lg bg-brand text-black border border-brand" data-fuel="Flex">Flex</button>
+            <button type="button" class="fuel-btn py-2 text-xs font-medium rounded-lg bg-surface-card text-slate-300 border border-surface-border" data-fuel="Gasolina">Gasolina</button>
+            <button type="button" class="fuel-btn py-2 text-xs font-medium rounded-lg bg-surface-card text-slate-300 border border-surface-border" data-fuel="GNV">GNV</button>
+            <button type="button" class="fuel-btn py-2 text-xs font-medium rounded-lg bg-surface-card text-slate-300 border border-surface-border" data-fuel="Elétrico">Elétrico</button>
+          </div>
+        </div>
+
+        <!-- Foto do Veículo Preview -->
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1.5">Foto do Automóvel</label>
+          <div onclick="document.getElementById('vehicle-photo-input').click()" class="h-36 rounded-xl bg-gradient-to-tr from-[#131d27] to-[#1c2937] border border-surface-border relative overflow-hidden flex flex-col items-center justify-center text-center p-3 cursor-pointer hover:border-brand/40 transition">
+            <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#00e575_1px,transparent_1px)] [background-size:16px_16px]"></div>
+            <img id="vehicle-photo-preview" class="hidden absolute inset-0 w-full h-full object-cover z-10">
+            <div id="vehicle-photo-placeholder" class="relative z-20 flex flex-col items-center">
+              <span class="material-symbols-outlined text-4xl text-brand mb-1">add_a_photo</span>
+              <span class="text-xs font-semibold text-white">Toque para fotografar o veículo</span>
+              <span class="text-[10px] text-slate-400">Foto frontal e lateral 3/4</span>
+            </div>
+            <span id="vehicle-photo-badge" class="hidden absolute bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-black/70 border border-brand/30 text-brand text-[9px] rounded-full items-center gap-1 z-20">
+              <span class="material-symbols-outlined text-xs">check_circle</span> Foto anexada
+            </span>
+            <input id="vehicle-photo-input" type="file" accept="image/*" capture="environment" class="hidden" onchange="handleVehiclePhotoCapture(event)">
+          </div>
+        </div>
+
+        <!-- CRLV Digital -->
+        <div onclick="document.getElementById('crlv-input').click()" class="bg-surface-card border border-surface-border rounded-xl p-3.5 flex items-center justify-between cursor-pointer hover:border-brand/40 transition">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-lg bg-brand/10 border border-brand/30 flex items-center justify-center text-brand shrink-0">
+              <span class="material-symbols-outlined text-xl">description</span>
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold text-white">CRLV Digital</p>
+              <p id="crlv-status-text" class="text-[10px] text-slate-400 truncate">Toque para anexar o documento</p>
+            </div>
+          </div>
+          <span id="crlv-badge" class="hidden text-[10px] text-brand bg-brand/10 px-2 py-1 rounded-full font-medium items-center gap-1 shrink-0">
+            <span class="material-symbols-outlined text-xs">check_circle</span> Anexado
+          </span>
+          <input id="crlv-input" type="file" accept="image/*,application/pdf" capture="environment" class="hidden" onchange="handleCrlvCapture(event)">
+        </div>
+
+        <!-- Info Criptografia e LGPD -->
+        <div class="bg-surface-card/70 border border-surface-border rounded-xl p-3 flex items-start gap-2.5">
+          <span class="material-symbols-outlined text-brand text-lg mt-0.5">verified_user</span>
+          <p class="text-[11px] text-slate-400 leading-relaxed">
+            <strong class="text-white">Proteção de Dados (LGPD):</strong> As fotos do seu veículo e do CRLV ficam restritas ao seu cadastro — só você e sua empresa administradora (se houver) têm acesso. Consulte a <a href="/politica-de-privacidade.html" target="_blank" class="text-brand hover:underline">Política de Privacidade</a>.
+          </p>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 rounded-xl bg-brand hover:bg-brand-dark text-black font-display font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand/20 transition">
+          <span class="material-symbols-outlined text-lg">check</span>
+          Concluir e Enviar para Análise
+        </button>
+      </form>
+    </section>
+
+    <!-- ==================== TELA 4: INÍCIO / COCKPIT PRO ==================== -->
+    <section id="view-cockpit" class="screen-view fade-in w-full space-y-4">
+      <!-- Cockpit Header: Driver Avatar + Online Pill -->
+      <div class="flex items-center justify-between bg-surface-card p-3.5 rounded-2xl border border-surface-border">
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <div class="w-12 h-12 rounded-xl bg-slate-800 border-2 border-brand overflow-hidden flex items-center justify-center text-slate-300 font-bold">
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80" alt="João Silva" class="w-full h-full object-cover">
+            </div>
+            <span id="cockpit-avatar-dot" class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-brand rounded-full border-2 border-surface-card pulse-online"></span>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <h2 id="cockpit-driver-name" class="font-display font-bold text-sm text-white">Sr. João Silva</h2>
+              <span class="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded font-semibold">Diamante</span>
+            </div>
+            <p id="cockpit-vehicle-info" class="text-xs text-slate-400">Onix Plus Premier • BRA2E19</p>
+          </div>
+        </div>
+
+        <!-- Botão Toggle Online/Offline -->
+        <button id="btn-toggle-online" onclick="handleToggleStatus()" class="px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 bg-brand text-black shadow-lg shadow-brand/25 transition active:scale-95">
+          <span class="w-2 h-2 rounded-full bg-black"></span>
+          <span id="lbl-toggle-status">ONLINE</span>
+        </button>
+      </div>
+
+      <!-- Cockpit Telemetria / Velocímetro Digital & Autonomia -->
+      <div class="bg-gradient-to-b from-[#151d27] to-[#0f141c] p-4 rounded-2xl border border-surface-border relative overflow-hidden">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+          <span class="flex items-center gap-1 text-brand font-medium">
+            <span class="material-symbols-outlined text-sm">my_location</span> GPS Conectado
+          </span>
+          <span class="text-slate-400">Meta do Dia: <strong class="text-white">R$ 350</strong></span>
+        </div>
+
+        <!-- Velocímetro Central -->
+        <div class="flex flex-col items-center justify-center my-2">
+          <div class="relative w-36 h-36 rounded-full border-4 border-slate-800 border-t-brand border-r-brand flex flex-col items-center justify-center bg-surface-card/60 shadow-inner">
+            <span id="cockpit-speed" class="text-4xl font-display font-extrabold text-white tracking-tight">0</span>
+            <span class="text-[11px] text-brand font-bold uppercase tracking-wider">km/h</span>
+            <span class="text-[9px] text-slate-400">Pronto para rodar</span>
+          </div>
+        </div>
+
+        <!-- Mini Stats de Eficiência -->
+        <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-800/80 text-center">
+          <div>
+            <p class="text-[10px] text-slate-400">Consumo Médio</p>
+            <p class="text-xs font-bold text-white mt-0.5">11.2 km/L</p>
+          </div>
+          <div>
+            <p class="text-[10px] text-slate-400">Autonomia</p>
+            <p class="text-xs font-bold text-brand mt-0.5">480 km</p>
+          </div>
+          <div>
+            <p class="text-[10px] text-slate-400">Calibragem</p>
+            <p class="text-xs font-bold text-slate-300 mt-0.5">32 PSI (OK)</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card de Ganhos Hoje -->
+      <div class="bg-surface-card p-4 rounded-2xl border border-surface-border">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs text-slate-400 font-medium">Ganhos de Hoje</span>
+          <span class="text-[10px] bg-brand/10 text-brand border border-brand/30 px-2 py-0.5 rounded-full font-semibold">+18.4% vs ontem</span>
+        </div>
+        <div class="flex items-baseline gap-2 mb-3">
+          <span id="cockpit-earnings" class="text-3xl font-display font-extrabold text-white">R$ 284,50</span>
+          <span class="text-xs text-slate-400">Líquido</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 pt-3 border-t border-slate-800 text-center">
+          <div class="bg-surface-subtle p-2 rounded-xl">
+            <span class="material-symbols-outlined text-brand text-sm">hail</span>
+            <p class="text-[10px] text-slate-400">Corridas</p>
+            <p id="cockpit-rides" class="text-xs font-bold text-white">8</p>
+          </div>
+          <div class="bg-surface-subtle p-2 rounded-xl">
+            <span class="material-symbols-outlined text-brand text-sm">schedule</span>
+            <p class="text-[10px] text-slate-400">Tempo Online</p>
+            <p id="cockpit-hours" class="text-xs font-bold text-white">4h 30m</p>
+          </div>
+          <div class="bg-surface-subtle p-2 rounded-xl">
+            <span class="material-symbols-outlined text-brand text-sm">speed</span>
+            <p class="text-[10px] text-slate-400">Km Rodados</p>
+            <p id="cockpit-km" class="text-xs font-bold text-white">86.5 km</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Radar de Demanda / Heatmap -->
+      <div class="bg-surface-card p-4 rounded-2xl border border-surface-border">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-brand text-base">radar</span>
+            <span class="text-xs font-bold text-white uppercase tracking-wider">Radar de Demanda</span>
+          </div>
+          <span class="text-[10px] text-brand font-bold bg-brand/10 px-2 py-0.5 rounded-full">1.4x Dinâmico</span>
+        </div>
+
+        <!-- Mapa real (Google Maps) com overlay de demanda -->
+        <div class="relative h-40 rounded-xl bg-[#091219] overflow-hidden border border-slate-800">
+          <iframe
+            id="demand-map-frame"
+            class="w-full h-full"
+            style="border:0; filter: invert(92%) hue-rotate(180deg) brightness(0.95) contrast(1.05);"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            src="https://www.google.com/maps?q=-23.5613,-46.6565&z=15&output=embed">
+          </iframe>
+
+          <div class="absolute inset-0 pointer-events-none flex items-end p-2">
+            <span id="map-you-are-here" class="text-[10px] font-semibold text-white bg-black/70 px-2 py-0.5 rounded-full border border-slate-700">📍 Localizando...</span>
+          </div>
+
+          <div class="absolute top-2 right-2 bg-black/80 border border-slate-800 text-[9px] px-2 py-1 rounded text-slate-300 pointer-events-none">
+            ✈ Aeroporto: Alta
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Corridas da Semana (dados reais) -->
+      <div class="bg-surface-card p-4 rounded-2xl border border-surface-border">
+        <div class="flex items-center gap-1.5 mb-3">
+          <span class="material-symbols-outlined text-brand text-base">route</span>
+          <span class="text-xs font-bold text-white uppercase tracking-wider">Corridas desta Semana</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div class="bg-surface-subtle p-3 rounded-xl border border-surface-border text-center">
+            <p id="week-rides-count" class="text-2xl font-display font-extrabold text-white">0</p>
+            <p class="text-[10px] text-slate-400">corridas registradas</p>
+          </div>
+          <div class="bg-surface-subtle p-3 rounded-xl border border-surface-border text-center">
+            <p id="week-rides-total" class="text-2xl font-display font-extrabold text-brand">R$ 0,00</p>
+            <p class="text-[10px] text-slate-400">faturado na semana</p>
+          </div>
+        </div>
+
+        <button onclick="openRideModal()" class="w-full py-3 rounded-xl bg-brand hover:bg-brand-dark text-black font-display font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-brand/20 transition active:scale-95">
+          <span class="material-symbols-outlined text-lg">add_road</span>
+          Registrar Corrida
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== TELA 5: CONTROLE DE CUSTOS ==================== -->
+    <section id="view-expenses" class="screen-view hidden fade-in w-full space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="text-[10px] font-bold text-brand uppercase tracking-wider bg-brand/10 border border-brand/30 px-2 py-0.5 rounded-full">MÓDULO FINANCEIRO</span>
+          <h2 class="text-2xl font-display font-bold text-white mt-1">Controle de Custos</h2>
+          <p class="text-xs text-slate-400">Monitore gastos operacionais para maximizar seu lucro.</p>
+        </div>
+      </div>
+
+      <!-- Card Principal: Total do Mês e Lucro Líquido -->
+      <div class="bg-gradient-to-br from-surface-card to-[#121c27] p-4 rounded-2xl border border-surface-border">
+        <span class="text-xs text-slate-400 font-medium">Total de Custos do Mês</span>
+        <div class="flex items-baseline gap-2 mb-3">
+          <span id="costs-total" class="text-3xl font-display font-black text-white">R$ 842,50</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-3 border-t border-slate-800">
+          <div class="bg-surface-subtle/80 p-2.5 rounded-xl">
+            <span class="text-[10px] text-slate-400">Faturamento Bruto</span>
+            <p id="costs-gross" class="text-sm font-bold text-white mt-0.5">R$ 3.260,00</p>
+          </div>
+          <div class="bg-surface-subtle/80 p-2.5 rounded-xl border border-brand/20">
+            <span class="text-[10px] text-brand">Lucro Líquido Real</span>
+            <p id="costs-net" class="text-sm font-bold text-brand mt-0.5">R$ 2.417,50</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botão Lançar Nova Despesa -->
+      <button onclick="openExpenseModal()" class="w-full py-3.5 rounded-xl bg-brand hover:bg-brand-dark text-black font-display font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand/20 transition active:scale-95">
+        <span class="material-symbols-outlined text-xl">add_circle</span>
+        Lançar Nova Despesa
+      </button>
+
+      <!-- Alerta Inteligente koren AI -->
+      <div class="bg-surface-card border border-brand/30 rounded-2xl p-3.5 flex items-start gap-3 relative overflow-hidden">
+        <div class="w-8 h-8 rounded-lg bg-brand/10 border border-brand/40 flex items-center justify-center text-brand shrink-0">
+          <span class="material-symbols-outlined text-lg">lightbulb</span>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-white">Meta de combustível atingida!</p>
+          <p class="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+            Seus gastos com combustível representam <span class="text-brand font-semibold" id="costs-fuel-pct">42,6%</span> das despesas totais. Economia real nos postos parceiros koren: <span class="text-white font-semibold">R$ 54,10</span> este mês.
+          </p>
+        </div>
+      </div>
+
+      <!-- Histórico de Lançamentos -->
+      <div class="bg-surface-card p-4 rounded-2xl border border-surface-border">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-display font-bold text-sm text-white">Histórico de Lançamentos</h3>
+          <span class="text-[10px] text-slate-400">Recentes</span>
+        </div>
+
+        <div id="expenses-list" class="space-y-2.5">
+          <!-- Itens populados via JS dinamicamente -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TELA 6: CORRIDAS & TARIFAS ==================== -->
+    <section id="view-rides" class="screen-view hidden fade-in w-full space-y-4">
+      <div>
+        <span class="text-[10px] font-bold text-brand uppercase tracking-wider bg-brand/10 border border-brand/30 px-2 py-0.5 rounded-full">PAINEL DE TARIFAS</span>
+        <h2 class="text-2xl font-display font-bold text-white mt-1">Corridas & Tarifas</h2>
+        <p class="text-xs text-slate-400">Configure seus preços particulares e gere orçamentos instantâneos para passageiros.</p>
+      </div>
+
+      <!-- Link Direto WhatsApp Particular -->
+      <div id="direct-link-card" class="bg-gradient-to-r from-surface-card to-[#121c27] p-4 rounded-2xl border border-surface-border space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-white flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-brand text-base">link</span>
+            Seu Link Direto de Corrida Particular
+          </span>
+          <span class="text-[9px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">Ativo</span>
+        </div>
+
+        <div class="flex items-center justify-between bg-surface-subtle px-3 py-2.5 rounded-xl border border-surface-border">
+          <span id="direct-link-url" class="text-xs font-mono text-slate-300 truncate">https://koren.app/p/joaosilva</span>
+          <button onclick="copyDirectLink()" class="text-brand hover:text-brand-dark text-xs font-bold ml-2 shrink-0 flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">content_copy</span>
+            <span id="btn-copy-label">Copiar</span>
+          </button>
+        </div>
+
+        <button onclick="shareDirectLinkWhatsApp()" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-semibold text-xs flex items-center justify-center gap-2 transition shadow-md shadow-emerald-500/20">
+          <span class="material-symbols-outlined text-base">chat</span>
+          Enviar Link no WhatsApp
+        </button>
+      </div>
+
+      <!-- Aviso quando o admin bloqueia o Link Direto -->
+      <div id="direct-link-locked-msg" class="hidden bg-surface-card/70 border border-surface-border rounded-2xl p-3.5 flex items-start gap-2.5">
+        <span class="material-symbols-outlined text-slate-500 text-lg mt-0.5">lock</span>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          Peça liberação ao seu admin para usar o Link Direto de corrida particular.
+        </p>
+      </div>
+
+      <!-- Minhas Tarifas Particulares (Editáveis) -->
+      <div class="bg-surface-card p-4 rounded-2xl border border-surface-border">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-display font-bold text-sm text-white">Minhas Tarifas Particulares</h3>
+          <span class="text-[10px] text-slate-400">100% seu lucro</span>
+        </div>
+
+        <form id="form-rates" onsubmit="handleSaveRates(event)" class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-surface-subtle p-3 rounded-xl border border-surface-border">
+              <label class="text-[10px] text-slate-400">Valor por Km</label>
+              <div class="flex items-center mt-1">
+                <span class="text-xs text-slate-400 mr-1">R$</span>
+                <input id="rate-km" type="number" step="0.05" value="2.75" class="bg-transparent text-sm font-bold text-white w-full outline-none disabled:text-slate-500 disabled:cursor-not-allowed">
+              </div>
+            </div>
+
+            <div class="bg-surface-subtle p-3 rounded-xl border border-surface-border">
+              <label class="text-[10px] text-slate-400">Minuto Parado</label>
+              <div class="flex items-center mt-1">
+                <span class="text-xs text-slate-400 mr-1">R$</span>
+                <input id="rate-minute" type="number" step="0.05" value="0.45" class="bg-transparent text-sm font-bold text-white w-full outline-none disabled:text-slate-500 disabled:cursor-not-allowed">
+              </div>
+            </div>
+
+            <div class="bg-surface-subtle p-3 rounded-xl border border-surface-border">
+              <label class="text-[10px] text-slate-400">Tarifa Base</label>
+              <div class="flex items-center mt-1">
+                <span class="text-xs text-slate-400 mr-1">R$</span>
+                <input id="rate-base" type="number" step="0.50" value="6.50" class="bg-transparent text-sm font-bold text-white w-full outline-none disabled:text-slate-500 disabled:cursor-not-allowed">
+              </div>
+            </div>
+
+            <div class="bg-surface-subtle p-3 rounded-xl border border-surface-border">
+              <label class="text-[10px] text-slate-400">Tarifa Mínima</label>
+              <div class="flex items-center mt-1">
+                <span class="text-xs text-slate-400 mr-1">R$</span>
+                <input id="rate-min" type="number" step="0.50" value="15.00" class="bg-transparent text-sm font-bold text-white w-full outline-none disabled:text-slate-500 disabled:cursor-not-allowed">
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="w-full py-2.5 rounded-xl bg-surface-subtle hover:bg-slate-700/60 border border-slate-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface-subtle">
+            <span class="material-symbols-outlined text-sm text-brand">save</span>
+            Salvar Tarifas
+          </button>
+        </form>
+
+        <p id="rates-locked-msg" class="hidden mt-3 text-[11px] text-slate-400 flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm text-slate-500">lock</span>
+          Suas tarifas são gerenciadas pelo seu admin.
+        </p>
+      </div>
+
+      <!-- Simulador Rápido de Orçamento -->
+      <div class="bg-surface-card p-4 rounded-2xl border border-surface-border space-y-3">
+        <h3 class="font-display font-bold text-sm text-white">Simulador de Orçamento</h3>
+        
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[10px] text-slate-400">Distância Prevista (km)</label>
+            <input id="sim-km" type="number" value="14" oninput="calculateSimulation()" class="w-full bg-surface-subtle border border-surface-border rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-brand">
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400">Tempo Estimado (min)</label>
+            <input id="sim-min" type="number" value="22" oninput="calculateSimulation()" class="w-full bg-surface-subtle border border-surface-border rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-brand">
+          </div>
+        </div>
+
+        <div class="bg-surface-subtle p-3 rounded-xl border border-brand/30 flex items-center justify-between">
+          <div>
+            <span class="text-[10px] text-slate-400">Valor Estimado Sugerido</span>
+            <p id="sim-result" class="text-xl font-display font-black text-brand">R$ 70,40</p>
+          </div>
+          <button onclick="shareSimulatedQuote()" class="px-3 py-1.5 rounded-lg bg-brand text-black text-xs font-bold hover:bg-brand-dark transition">
+            Enviar Proposta
+          </button>
+        </div>
+      </div>
+
+      <!-- Últimas Corridas -->
+      <div class="bg-surface-card p-4 rounded-2xl border border-surface-border">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-display font-bold text-sm text-white">Últimas Corridas</h3>
+          <span class="text-[10px] text-slate-400">Histórico</span>
+        </div>
+
+        <div id="rides-list" class="space-y-2.5">
+          <!-- Preenchido via JS dinamicamente -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TELA 7: PERFIL DO MOTORISTA ==================== -->
+    <section id="view-profile" class="screen-view hidden fade-in w-full space-y-4">
+      <!-- Profile Header Card -->
+      <div class="bg-surface-card p-4 rounded-2xl border border-surface-border flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-14 h-14 rounded-2xl bg-slate-800 border-2 border-brand overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80" alt="João Silva" class="w-full h-full object-cover">
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <h2 class="font-display font-bold text-base text-white">Sr. João Silva</h2>
+              <span class="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded font-semibold">Diamante</span>
+            </div>
+            <p class="text-xs text-slate-400">Motorista Parceiro koren</p>
+            <p class="text-[10px] text-brand">Membro desde Março/2023</p>
+          </div>
+        </div>
+
+        <!-- Switch Disponível -->
+        <div class="flex flex-col items-end">
+          <label class="switch">
+            <input type="checkbox" id="profile-availability" checked onchange="handleToggleStatus()">
+            <span class="slider"></span>
+          </label>
+          <span class="text-[9px] text-slate-400 mt-1">Disponível</span>
+        </div>
+      </div>
+
+      <!-- Métricas de Desempenho (4 Cards) -->
+      <div class="grid grid-cols-4 gap-2">
+        <div class="bg-surface-card p-2.5 rounded-xl border border-surface-border text-center">
+          <span class="text-[10px] text-slate-400">Avaliação</span>
+          <p class="text-sm font-bold text-yellow-400 mt-0.5">4.96 ★</p>
+        </div>
+        <div class="bg-surface-card p-2.5 rounded-xl border border-surface-border text-center">
+          <span class="text-[10px] text-slate-400">Aceitação</span>
+          <p class="text-sm font-bold text-brand mt-0.5">98.4%</p>
+        </div>
+        <div class="bg-surface-card p-2.5 rounded-xl border border-surface-border text-center">
+          <span class="text-[10px] text-slate-400">Cancela</span>
+          <p class="text-sm font-bold text-slate-300 mt-0.5">0.8%</p>
+        </div>
+        <div class="bg-surface-card p-2.5 rounded-xl border border-surface-border text-center">
+          <span class="text-[10px] text-slate-400">Tempo Médio</span>
+          <p class="text-sm font-bold text-slate-300 mt-0.5">6.2 min</p>
+        </div>
+      </div>
+
+      <!-- Veículos Cadastrados -->
+      <div class="bg-surface-card p-4 rounded-2xl border border-surface-border space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-display font-bold text-sm text-white">Veículos Cadastrados</h3>
+          <button onclick="navigateTo('register-step2')" class="text-xs text-brand font-semibold hover:underline flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">add</span> Adicionar
+          </button>
+        </div>
+
+        <div id="profile-vehicles-list" class="space-y-2">
+          <!-- Populado via JS -->
+        </div>
+      </div>
+
+      <!-- Documentos & Repasse -->
+      <div class="bg-surface-card p-4 rounded-2xl border border-surface-border space-y-2.5">
+        <h3 class="font-display font-bold text-sm text-white">Documentos e Repasse</h3>
+
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-subtle border border-surface-border">
+          <div class="flex items-center gap-2.5">
+            <span class="material-symbols-outlined text-brand text-lg">badge</span>
+            <div>
+              <p class="text-xs font-semibold text-white">CNH Digital</p>
+              <p class="text-[10px] text-slate-400">Validade: 2028 • Categoria B (EAR)</p>
+            </div>
+          </div>
+          <span class="text-[10px] text-brand bg-brand/10 px-2 py-0.5 rounded-full font-medium">Aprovado</span>
+        </div>
+
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-subtle border border-surface-border">
+          <div class="flex items-center gap-2.5">
+            <span class="material-symbols-outlined text-brand text-lg">currency_exchange</span>
+            <div>
+              <p class="text-xs font-semibold text-white">Chave Pix para Repasse</p>
+              <p class="text-[10px] text-slate-400">joao.silva@koren.app</p>
+            </div>
+          </div>
+          <button class="text-xs text-brand font-semibold">Editar</button>
+        </div>
+      </div>
+
+      <!-- Preferências e Suporte -->
+      <div class="bg-surface-card p-4 rounded-2xl border border-surface-border space-y-2">
+        <h3 class="font-display font-bold text-sm text-white">Preferências e Suporte</h3>
+
+        <button class="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-surface-subtle transition text-left">
+          <div class="flex items-center gap-2.5 text-slate-300 text-xs">
+            <span class="material-symbols-outlined text-slate-400 text-base">support_agent</span>
+            Central de Ajuda koren
+          </div>
+          <span class="material-symbols-outlined text-slate-500 text-sm">chevron_right</span>
+        </button>
+
+        <a href="/politica-de-privacidade.html" target="_blank" class="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-surface-subtle transition text-left">
+          <div class="flex items-center gap-2.5 text-slate-300 text-xs">
+            <span class="material-symbols-outlined text-slate-400 text-base">security</span>
+            Política de Privacidade
+          </div>
+          <span class="material-symbols-outlined text-slate-500 text-sm">chevron_right</span>
+        </a>
+
+        <a href="/termos-de-uso.html" target="_blank" class="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-surface-subtle transition text-left">
+          <div class="flex items-center gap-2.5 text-slate-300 text-xs">
+            <span class="material-symbols-outlined text-slate-400 text-base">description</span>
+            Termos de Uso
+          </div>
+          <span class="material-symbols-outlined text-slate-500 text-sm">chevron_right</span>
+        </a>
+
+        <button onclick="handleLogout()" class="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-red-500/10 text-red-400 transition text-left mt-2 border border-red-500/20">
+          <div class="flex items-center gap-2.5 text-xs font-semibold">
+            <span class="material-symbols-outlined text-base">logout</span>
+            Sair da Conta / Desconectar
+          </div>
+          <span class="material-symbols-outlined text-sm">chevron_right</span>
+        </button>
+      </div>
+
+      <!-- Meus Dados (LGPD) -->
+      <div class="bg-surface-card p-4 rounded-2xl border border-surface-border space-y-2">
+        <h3 class="font-display font-bold text-sm text-white">Meus Dados</h3>
+        <p class="text-[10px] text-slate-400 -mt-1 mb-1">Seus direitos garantidos pela LGPD (Lei 13.709/2018).</p>
+
+        <button onclick="handleExportData()" class="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-surface-subtle transition text-left">
+          <div class="flex items-center gap-2.5 text-slate-300 text-xs">
+            <span class="material-symbols-outlined text-slate-400 text-base">download</span>
+            Baixar meus dados
+          </div>
+          <span class="material-symbols-outlined text-slate-500 text-sm">chevron_right</span>
+        </button>
+
+        <button onclick="openDeleteAccountModal()" class="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-red-500/10 text-red-400 transition text-left border border-red-500/20">
+          <div class="flex items-center gap-2.5 text-xs font-semibold">
+            <span class="material-symbols-outlined text-base">delete_forever</span>
+            Excluir minha conta
+          </div>
+          <span class="material-symbols-outlined text-sm">chevron_right</span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== MODAL DE LANÇAR DESPESA ==================== -->
+  <div id="modal-expense" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-surface-card border border-surface-border rounded-2xl w-full max-w-sm p-5 space-y-4 fade-in">
+      <div class="flex items-center justify-between">
+        <h3 class="font-display font-bold text-base text-white">Lançar Nova Despesa</h3>
+        <button onclick="closeExpenseModal()" class="w-7 h-7 rounded-lg bg-surface-subtle flex items-center justify-center text-slate-400 hover:text-white">
+          <span class="material-symbols-outlined text-base">close</span>
+        </button>
+      </div>
+
+      <form id="form-new-expense" onsubmit="handleNewExpenseSubmit(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Categoria</label>
+          <select id="expense-cat" required class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2.5 text-xs text-white outline-none">
+            <option value="combustivel">Combustível</option>
+            <option value="pedagio">Pedágio</option>
+            <option value="lavagem">Lavagem</option>
+            <option value="manutencao">Manutenção / Peças</option>
+            <option value="alimentacao">Alimentação</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Título / Descrição</label>
+          <input id="expense-title" type="text" placeholder="Ex: Gasolina Aditivada Posto Shell" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-xs text-white outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Valor da Despesa (R$)</label>
+          <input id="expense-amount" type="number" step="0.01" required placeholder="0,00" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-sm font-bold text-white outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Observação Adicional</label>
+          <input id="expense-notes" type="text" placeholder="Ex: 40 Litros Etanol" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-xs text-white outline-none">
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-xl bg-brand hover:bg-brand-dark text-black font-display font-bold text-xs flex items-center justify-center gap-1.5 transition">
+          Confirmar Lançamento
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Registrar Corrida -->
+  <div id="modal-ride" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-surface-card border border-surface-border rounded-2xl w-full max-w-sm p-5 space-y-4 fade-in max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <h3 class="font-display font-bold text-base text-white">Registrar Corrida</h3>
+        <button onclick="closeRideModal()" class="w-7 h-7 rounded-lg bg-surface-subtle flex items-center justify-center text-slate-400 hover:text-white">
+          <span class="material-symbols-outlined text-base">close</span>
+        </button>
+      </div>
+
+      <form id="form-new-ride" onsubmit="handleNewRideSubmit(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Nome do Passageiro</label>
+          <input id="ride-passenger-name" type="text" required placeholder="Ex: Mariana Alencar" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-xs text-white outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">WhatsApp (opcional)</label>
+          <input id="ride-passenger-phone" type="text" placeholder="(11) 91234-5678" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-xs text-white outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Origem</label>
+          <input id="ride-origin" type="text" required placeholder="Ex: Av. Paulista, 1578" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-xs text-white outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Destino</label>
+          <input id="ride-destination" type="text" required placeholder="Ex: Jardins" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-xs text-white outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Distância (km)</label>
+            <input id="ride-distance" type="number" step="0.1" placeholder="0,0" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-xs text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Duração (min)</label>
+            <input id="ride-duration" type="number" placeholder="0" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-xs text-white outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Valor da Corrida (R$)</label>
+          <input id="ride-fare" type="number" step="0.01" required placeholder="0,00" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-sm font-bold text-white outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Observação (opcional)</label>
+          <input id="ride-notes" type="text" placeholder="Ex: Corrida via WhatsApp" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-xs text-white outline-none">
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-xl bg-brand hover:bg-brand-dark text-black font-display font-bold text-xs flex items-center justify-center gap-1.5 transition">
+          Confirmar Corrida
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Excluir Conta (LGPD) -->
+  <div id="modal-delete-account" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-surface-card border border-red-500/30 rounded-2xl w-full max-w-sm p-5 space-y-4 fade-in">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
+          <span class="material-symbols-outlined">warning</span>
+        </div>
+        <h3 class="font-display font-bold text-base text-white">Excluir sua conta?</h3>
+      </div>
+
+      <p class="text-xs text-slate-400 leading-relaxed">
+        Isso apaga permanentemente seu cadastro, veículos, despesas, corridas registradas e tarifas. <strong class="text-red-400">Essa ação não pode ser desfeita.</strong>
+      </p>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Digite <strong class="text-white">EXCLUIR</strong> para confirmar</label>
+        <input id="delete-account-confirm-input" type="text" class="w-full bg-surface-subtle border border-surface-border focus:border-red-500 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+      </div>
+
+      <div class="flex gap-2.5">
+        <button onclick="closeDeleteAccountModal()" class="flex-1 py-2.5 rounded-xl bg-surface-subtle border border-surface-border text-slate-300 font-semibold text-xs">
+          Cancelar
+        </button>
+        <button onclick="handleConfirmDeleteAccount()" class="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-xs">
+          Excluir Conta
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== BOTTOM NAVIGATION DOCK (APARECE NAS TELAS PRINCIPAIS) ==================== -->
+  <nav id="app-bottom-nav" class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bottom-dock px-4 py-2 flex items-center justify-around z-40 border-t border-slate-800">
+    <button onclick="navigateTo('cockpit')" class="nav-btn flex flex-col items-center gap-1 text-brand" data-nav="cockpit">
+      <span class="material-symbols-outlined text-xl">speed</span>
+      <span class="text-[10px] font-semibold">Cockpit</span>
+    </button>
+    <button onclick="navigateTo('expenses')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200" data-nav="expenses">
+      <span class="material-symbols-outlined text-xl">account_balance_wallet</span>
+      <span class="text-[10px] font-medium">Custos</span>
+    </button>
+    <button onclick="navigateTo('rides')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200" data-nav="rides">
+      <span class="material-symbols-outlined text-xl">local_taxi</span>
+      <span class="text-[10px] font-medium">Tarifas</span>
+    </button>
+    <button onclick="navigateTo('profile')" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200" data-nav="profile">
+      <span class="material-symbols-outlined text-xl">person</span>
+      <span class="text-[10px] font-medium">Perfil</span>
+    </button>
+  </nav>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed top-14 left-1/2 -translate-x-1/2 bg-surface-card border border-brand text-white px-4 py-2 rounded-full text-xs shadow-2xl flex items-center gap-2 pointer-events-none transition-all duration-300 opacity-0 -translate-y-4 z-50">
+    <span class="material-symbols-outlined text-brand text-base">check_circle</span>
+    <span id="toast-msg">Mensagem</span>
+  </div>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

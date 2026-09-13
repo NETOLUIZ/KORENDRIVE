@@ -1,0 +1,185 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --color-brand: #00e575;
+  --color-brand-dark: #00b85c;
+  --color-brand-dim: rgba(0, 229, 117, 0.12);
+  --color-brand-glow: rgba(0, 229, 117, 0.25);
+  --bg-main: #0a0f14;
+  --bg-card: #131920;
+  --bg-card-subtle: #182029;
+  --border-card: #212a35;
+  --text-main: #f3f4f6;
+  --text-muted: #94a3b8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0f14;
+}
+::-webkit-scrollbar-thumb {
+  background: #25313d;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand);
+}
+
+/* Glass & Neon Effects */
+.glass-panel {
+  background: rgba(19, 25, 32, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.glow-brand {
+  box-shadow: 0 0 24px rgba(0, 229, 117, 0.25);
+}
+
+.glow-brand-sm {
+  box-shadow: 0 0 12px rgba(0, 229, 117, 0.18);
+}
+
+.border-glow:focus, .border-glow:focus-within {
+  border-color: #00e575;
+  box-shadow: 0 0 0 2px rgba(0, 229, 117, 0.2);
+}
+
+/* Pulse animation for online indicator */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(0, 229, 117, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(0, 229, 117, 0);
+  }
+}
+
+.pulse-online {
+  animation: pulseGlow 2s infinite cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+/* Placa Mercosul */
+.plate-mercosul {
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 3px solid #111827;
+  display: inline-flex;
+  flex-direction: column;
+  width: 170px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.plate-header {
+  background: #003399;
+  color: white;
+  padding: 2px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.plate-body {
+  padding: 4px 8px;
+  text-align: center;
+  color: #111827;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  letter-spacing: 3px;
+  line-height: 1.1;
+}
+
+/* Switch Toggle Component */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #2a3441;
+  transition: .3s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #00e575;
+}
+
+input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+/* Bottom Bar */
+.bottom-dock {
+  background: rgba(13, 18, 24, 0.95);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Animations */
+.fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
