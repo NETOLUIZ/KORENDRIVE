@@ -92,7 +92,8 @@ function navigateSA(page) {
   document.getElementById('page-subtitle').textContent = subtitle;
 
   const isDashboard = page === 'dashboard' || page === 'administradores';
-  document.getElementById('page-dashboard').classList.toggle('hidden', !isDashboard);
+  document.getElementById('page-dashboard').classList.toggle('hidden', page !== 'dashboard');
+  document.getElementById('page-administradores').classList.toggle('hidden', page !== 'administradores');
   document.getElementById('page-placeholder').classList.toggle('hidden', isDashboard);
 
   if (!isDashboard) {
