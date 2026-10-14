@@ -46,6 +46,7 @@ window.handleConfirmDeleteAccount = handleConfirmDeleteAccount;
 document.addEventListener('DOMContentLoaded', async () => {
   setupFuelSelector();
   setupCepLookup();
+  initRideAddressAutocomplete();
 
   const ref = new URLSearchParams(location.search).get('ref');
   if (ref) {
@@ -771,7 +772,7 @@ async function loadRidesAndRates() {
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5">
             <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${isWhatsApp ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-brand/10 text-brand border border-brand/30'}">
-              ${isWhatsApp ? 'Particular WhatsApp' : 'App koren'}
+              ${isWhatsApp ? 'Particular WhatsApp' : 'App korenDriver'}
             </span>
             <span class="text-xs font-bold text-white">${r.passenger_name}</span>
           </div>
@@ -933,6 +934,77 @@ function openRideModal() {
   const modal = document.getElementById('modal-ride');
   modal.classList.remove('hidden');
   modal.classList.add('flex');
+}
+
+// Busca de endereço (OpenStreetMap/Nominatim, gratuito, sem chave de API —
+// mesmo padrão já usado na busca de CEP) nos campos Origem/Destino do
+// Registrar Corrida.
+function setupAddressAutocomplete(inputId, suggestionsId) {
+  const input = document.getElementById(inputId);
+  const box = document.getElementById(suggestionsId);
+  if (!input || !box) return;
+
+  let debounceTimer = null;
+  let currentController = null;
+
+  function hideSuggestions() {
+    box.classList.add('hidden');
+    box.innerHTML = '';
+  }
+
+  async function search(query) {
+    if (currentController) currentController.abort();
+    currentController = new AbortController();
+
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=5&countrycodes=br&q=${encodeURIComponent(query)}`;
+      const res = await fetch(url, { signal: currentController.signal });
+      const results = await res.json();
+
+      if (!results.length) {
+        hideSuggestions();
+        return;
+      }
+
+      box.innerHTML = results.map((r, i) => `
+        <button type="button" data-idx="${i}" class="w-full text-left px-3 py-2 text-xs text-slate-200 hover:bg-surface-subtle border-b border-surface-border last:border-b-0 flex items-start gap-2">
+          <span class="material-symbols-outlined text-brand text-sm mt-0.5 shrink-0">location_on</span>
+          <span class="truncate">${r.display_name}</span>
+        </button>
+      `).join('');
+
+      box.querySelectorAll('button[data-idx]').forEach(btn => {
+        btn.onclick = () => {
+          input.value = results[Number(btn.dataset.idx)].display_name;
+          hideSuggestions();
+        };
+      });
+
+      box.classList.remove('hidden');
+    } catch (err) {
+      if (err.name !== 'AbortError') console.error('Erro na busca de endereço:', err);
+    }
+  }
+
+  input.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    const query = input.value.trim();
+    if (query.length < 3) {
+      hideSuggestions();
+      return;
+    }
+    debounceTimer = setTimeout(() => search(query), 450);
+  });
+
+  input.addEventListener('blur', () => {
+    // Delay pra permitir que o clique na sugestão registre antes do blur esconder a lista
+    setTimeout(hideSuggestions, 150);
+  });
+}
+
+function initRideAddressAutocomplete() {
+  setupAddressAutocomplete('ride-origin', 'ride-origin-suggestions');
+  setupAddressAutocomplete('ride-destination', 'ride-destination-suggestions');
 }
 
 function closeRideModal() {

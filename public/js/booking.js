@@ -101,7 +101,7 @@ function renderDriver() {
   const vehicleEl = document.getElementById('driver-vehicle');
   vehicleEl.textContent = state.vehicle
     ? `${state.vehicle.model} • ${state.vehicle.color}`
-    : 'Motorista Parceiro koren';
+    : 'Motorista Parceiro korenDriver';
 }
 
 function selectServiceType(type) {
@@ -158,7 +158,7 @@ function handleBookingSubmit(event) {
 
   const mapsUrl = buildMapsRouteUrl(origin, stops, destination);
 
-  let message = `Olá ${state.driver.name}! Gostaria de solicitar uma *${serviceLabel}* pelo koren:\n\n`;
+  let message = `Olá ${state.driver.name}! Gostaria de solicitar uma *${serviceLabel}* pelo korenDriver:\n\n`;
   message += `📍 Origem: ${origin}\n`;
   stops.forEach((stop, i) => { message += `🛑 Parada ${i + 1}: ${stop}\n`; });
   message += `🎯 Destino: ${destination}\n`;

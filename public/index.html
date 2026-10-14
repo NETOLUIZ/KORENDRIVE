@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="dark" lang="pt-BR">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
@@ -11,7 +11,7 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <!-- Google Material Symbols -->
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
@@ -24,30 +24,30 @@
         extend: {
           colors: {
             brand: {
-              DEFAULT: '#4FB885',
-              dark: '#3B9167',
-              light: '#7CCA8D',
-              dim: 'rgba(79, 184, 133, 0.12)',
-              glow: 'rgba(79, 184, 133, 0.25)'
+              DEFAULT: '#FB4F14',
+              dark: '#D93D08',
+              light: '#FF875C',
+              dim: 'rgba(251, 79, 20, 0.12)',
+              glow: 'rgba(251, 79, 20, 0.25)'
             },
             accent: {
-              DEFAULT: '#DF6A46',
-              dark: '#C34822',
-              dim: 'rgba(223, 106, 70, 0.12)'
+              DEFAULT: '#FB4F14',
+              dark: '#D93D08',
+              dim: 'rgba(251, 79, 20, 0.12)'
             },
             highlight: {
-              DEFAULT: '#DCF20F'
+              DEFAULT: '#FB4F14'
             },
             surface: {
-              main: '#241F21',
-              card: '#373034',
-              subtle: '#483D43',
-              border: '#5E5058'
+              main: '#F9F8EF',
+              card: '#FFFFFF',
+              subtle: '#F1F0E9',
+              border: '#D9D7CF'
             }
           },
           fontFamily: {
-            sans: ['"Uber Move Text"', 'Inter', '-apple-system', 'BlinkMacSystemFont', '"Helvetica Neue"', 'Arial', 'sans-serif'],
-            display: ['"Uber Move"', 'Inter', 'sans-serif']
+            sans: ['"Uber Move Text"', 'DM Sans', '-apple-system', 'BlinkMacSystemFont', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+            display: ['"Uber Move"', 'DM Sans', 'sans-serif']
           }
         }
       }
@@ -59,15 +59,14 @@
 <body class="bg-surface-main text-slate-100 min-h-screen flex flex-col items-center justify-start pb-20 selection:bg-brand selection:text-black">
 
   <!-- TOP BAR -->
-  <header class="w-full bg-[#19151a]/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-50 px-3 py-2 flex items-center justify-start">
+  <header class="w-full bg-[#F9F8EF]/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-50 px-3 py-2 flex items-center justify-start">
     <!-- Brand Mini Logo -->
     <div class="flex items-center gap-2 cursor-pointer" onclick="navigateTo('cockpit')">
       <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-dark to-brand flex items-center justify-center shadow-lg shadow-brand/20">
         <span class="material-symbols-outlined text-black font-black text-xl">navigation</span>
       </div>
       <div>
-        <span class="font-display font-bold text-white tracking-tight text-base">koren<span class="text-brand">Driver</span></span>
-        <span class="block text-[9px] text-brand uppercase font-mono tracking-widest leading-none">PRO Cockpit</span>
+        <span class="font-display font-bold tracking-tight text-base"><span class="text-[#176B45]">koren</span><span class="text-brand">Driver</span></span>
       </div>
     </div>
   </header>
@@ -80,11 +79,11 @@
       <div class="flex flex-col items-center text-center my-6">
         <!-- Logo Grande korenDriver -->
         <div class="relative mb-3 flex items-center justify-center">
-          <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand/20 via-surface-card to-[#191519] border border-brand/40 flex items-center justify-center glow-brand">
+          <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand/20 via-surface-card to-[#F9F8EF] border border-brand/40 flex items-center justify-center glow-brand">
             <span class="material-symbols-outlined text-brand text-5xl">electric_car</span>
           </div>
         </div>
-        <h1 class="text-3xl font-display font-extrabold text-white tracking-tight">koren<span class="text-brand">Driver</span></h1>
+        <h1 class="text-3xl font-display font-extrabold tracking-tight"><span class="text-[#176B45]">koren</span><span class="text-brand">Driver</span></h1>
         <p class="text-xs text-brand font-medium tracking-wider uppercase mt-1">Plataforma Oficial do Motorista</p>
         <p class="text-sm text-slate-400 mt-3 max-w-xs">Bem-vindo, parceiro. Acesse sua conta para começar a rodar ou ver seu faturamento.</p>
       </div>
@@ -285,7 +284,7 @@
         <div class="pt-1">
           <label class="flex items-start gap-2 cursor-pointer text-xs text-slate-400 bg-surface-card/60 p-2.5 rounded-xl border border-surface-border">
             <input id="reg-terms-accept" type="checkbox" required class="mt-0.5 rounded border-slate-700 bg-surface-card text-brand focus:ring-brand">
-            <span>Declaro que li e aceito os <a href="/termos-de-uso.html" target="_blank" class="text-brand hover:underline">Termos de Uso</a> e a <a href="/politica-de-privacidade.html" target="_blank" class="text-brand hover:underline">Política de Privacidade</a> da koren.</span>
+            <span>Declaro que li e aceito os <a href="/termos-de-uso.html" target="_blank" class="text-brand hover:underline">Termos de Uso</a> e a <a href="/politica-de-privacidade.html" target="_blank" class="text-brand hover:underline">Política de Privacidade</a> da korenDriver.</span>
           </label>
         </div>
 
@@ -358,7 +357,7 @@
         <!-- Foto do Veículo Preview -->
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1.5">Foto do Automóvel</label>
-          <div onclick="document.getElementById('vehicle-photo-input').click()" class="h-36 rounded-xl bg-gradient-to-tr from-[#2a2427] to-[#3a3338] border border-surface-border relative overflow-hidden flex flex-col items-center justify-center text-center p-3 cursor-pointer hover:border-brand/40 transition">
+          <div onclick="document.getElementById('vehicle-photo-input').click()" class="h-36 rounded-xl bg-gradient-to-tr from-[#F1F0E9] to-[#E8E6DE] border border-surface-border relative overflow-hidden flex flex-col items-center justify-center text-center p-3 cursor-pointer hover:border-brand/40 transition">
             <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#4fb885_1px,transparent_1px)] [background-size:16px_16px]"></div>
             <img id="vehicle-photo-preview" class="hidden absolute inset-0 w-full h-full object-cover z-10">
             <div id="vehicle-photo-placeholder" class="relative z-20 flex flex-col items-center">
@@ -431,7 +430,7 @@
       </div>
 
       <!-- Cockpit Telemetria / Velocímetro Digital & Autonomia -->
-      <div class="bg-gradient-to-b from-[#2a2427] to-[#19151a] p-4 rounded-2xl border border-surface-border relative overflow-hidden">
+      <div class="bg-gradient-to-b from-[#F1F0E9] to-[#F9F8EF] p-4 rounded-2xl border border-surface-border relative overflow-hidden">
         <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
           <span class="flex items-center gap-1 text-brand font-medium">
             <span class="material-symbols-outlined text-sm">my_location</span> GPS Conectado
@@ -506,7 +505,7 @@
         </div>
 
         <!-- Mapa real (Google Maps) com overlay de demanda -->
-        <div class="relative h-40 rounded-xl bg-[#120f10] overflow-hidden border border-slate-800">
+        <div class="relative h-40 rounded-xl bg-[#F1F0E9] overflow-hidden border border-slate-800">
           <iframe
             id="demand-map-frame"
             class="w-full h-full"
@@ -563,7 +562,7 @@
       </div>
 
       <!-- Card Principal: Total do Mês e Lucro Líquido -->
-      <div class="bg-gradient-to-br from-surface-card to-[#2a2427] p-4 rounded-2xl border border-surface-border">
+      <div class="bg-gradient-to-br from-surface-card to-[#F1F0E9] p-4 rounded-2xl border border-surface-border">
         <span class="text-xs text-slate-400 font-medium">Total de Custos do Mês</span>
         <div class="flex items-baseline gap-2 mb-3">
           <span id="costs-total" class="text-3xl font-display font-black text-white">R$ 842,50</span>
@@ -622,7 +621,7 @@
       </div>
 
       <!-- Link Direto WhatsApp Particular -->
-      <div id="direct-link-card" class="bg-gradient-to-r from-surface-card to-[#2a2427] p-4 rounded-2xl border border-surface-border space-y-3">
+      <div id="direct-link-card" class="bg-gradient-to-r from-surface-card to-[#F1F0E9] p-4 rounded-2xl border border-surface-border space-y-3">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-white flex items-center gap-1.5">
             <span class="material-symbols-outlined text-brand text-base">link</span>
@@ -757,7 +756,7 @@
               <h2 id="profile-driver-name" class="font-display font-bold text-base text-white">Sr. João Silva</h2>
               <span id="profile-category-badge" class="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded font-semibold">Novato</span>
             </div>
-            <p class="text-xs text-slate-400">Motorista Parceiro koren</p>
+            <p class="text-xs text-slate-400">Motorista Parceiro korenDriver</p>
             <p id="profile-member-since" class="text-[10px] text-brand">Membro desde —</p>
           </div>
         </div>
@@ -840,7 +839,7 @@
         <button class="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-surface-subtle transition text-left">
           <div class="flex items-center gap-2.5 text-slate-300 text-xs">
             <span class="material-symbols-outlined text-slate-400 text-base">support_agent</span>
-            Central de Ajuda koren
+            Central de Ajuda korenDriver
           </div>
           <span class="material-symbols-outlined text-slate-500 text-sm">chevron_right</span>
         </button>
@@ -960,14 +959,16 @@
           <input id="ride-passenger-phone" type="text" placeholder="(11) 91234-5678" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-xs text-white outline-none">
         </div>
 
-        <div>
+        <div class="relative">
           <label class="block text-xs font-medium text-slate-300 mb-1">Origem</label>
-          <input id="ride-origin" type="text" required placeholder="Ex: Av. Paulista, 1578" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-xs text-white outline-none">
+          <input id="ride-origin" type="text" required autocomplete="off" placeholder="Ex: Av. Paulista, 1578" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-xs text-white outline-none">
+          <div id="ride-origin-suggestions" class="hidden absolute z-20 left-0 right-0 mt-1 bg-surface-card border border-surface-border rounded-xl overflow-hidden shadow-lg"></div>
         </div>
 
-        <div>
+        <div class="relative">
           <label class="block text-xs font-medium text-slate-300 mb-1">Destino</label>
-          <input id="ride-destination" type="text" required placeholder="Ex: Jardins" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-xs text-white outline-none">
+          <input id="ride-destination" type="text" required autocomplete="off" placeholder="Ex: Rua Oscar Freire, 379" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-xs text-white outline-none">
+          <div id="ride-destination-suggestions" class="hidden absolute z-20 left-0 right-0 mt-1 bg-surface-card border border-surface-border rounded-xl overflow-hidden shadow-lg"></div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
