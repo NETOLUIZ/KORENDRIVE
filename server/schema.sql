@@ -28,15 +28,18 @@ CREATE TABLE IF NOT EXISTS drivers (
   cnh_front TEXT,
   cnh_back TEXT,
   status TEXT NOT NULL DEFAULT 'online' CHECK (status IN ('online', 'offline')),
-  rating NUMERIC(3,2) DEFAULT 4.96,
-  category TEXT DEFAULT 'Diamante',
-  acceptance_rate NUMERIC(5,2) DEFAULT 98.4,
-  cancellation_rate NUMERIC(5,2) DEFAULT 0.8,
-  today_earnings NUMERIC(10,2) DEFAULT 284.50,
-  today_rides INTEGER DEFAULT 8,
-  today_hours TEXT DEFAULT '4h 30m',
-  km_driven NUMERIC(10,2) DEFAULT 86.5,
-  fuel_efficiency NUMERIC(5,2) DEFAULT 11.2,
+  -- Motorista novo começa zerado — sem corrida, sem nota, sem categoria.
+  -- Esses valores eram os mesmos dados de demonstração (seedData), e todo
+  -- cadastro novo nascia com a nota/categoria/ganhos fake do motorista fictício.
+  rating NUMERIC(3,2),
+  category TEXT DEFAULT 'Novato',
+  acceptance_rate NUMERIC(5,2) DEFAULT 0,
+  cancellation_rate NUMERIC(5,2) DEFAULT 0,
+  today_earnings NUMERIC(10,2) DEFAULT 0,
+  today_rides INTEGER DEFAULT 0,
+  today_hours TEXT DEFAULT '0h 00m',
+  km_driven NUMERIC(10,2) DEFAULT 0,
+  fuel_efficiency NUMERIC(5,2),
   admin_id INTEGER REFERENCES admins(id),
   can_edit_rates BOOLEAN NOT NULL DEFAULT true,
   can_share_direct_link BOOLEAN NOT NULL DEFAULT true,
@@ -54,6 +57,20 @@ CREATE INDEX IF NOT EXISTS idx_drivers_admin_id ON drivers(admin_id);
 -- existente — Postgres suporta ADD COLUMN IF NOT EXISTS nativamente.
 ALTER TABLE drivers ADD COLUMN IF NOT EXISTS terms_version TEXT;
 ALTER TABLE drivers ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMPTZ;
+
+-- Corrige os DEFAULTs das colunas acima: a tabela já existia com os valores de
+-- demonstração (nota 4.96, categoria Diamante, R$284,50 etc) como DEFAULT, e
+-- "CREATE TABLE IF NOT EXISTS" não reaplica a definição de coluna em banco já
+-- criado — só um ALTER COLUMN muda o DEFAULT pros próximos cadastros.
+ALTER TABLE drivers ALTER COLUMN rating DROP DEFAULT;
+ALTER TABLE drivers ALTER COLUMN category SET DEFAULT 'Novato';
+ALTER TABLE drivers ALTER COLUMN acceptance_rate SET DEFAULT 0;
+ALTER TABLE drivers ALTER COLUMN cancellation_rate SET DEFAULT 0;
+ALTER TABLE drivers ALTER COLUMN today_earnings SET DEFAULT 0;
+ALTER TABLE drivers ALTER COLUMN today_rides SET DEFAULT 0;
+ALTER TABLE drivers ALTER COLUMN today_hours SET DEFAULT '0h 00m';
+ALTER TABLE drivers ALTER COLUMN km_driven SET DEFAULT 0;
+ALTER TABLE drivers ALTER COLUMN fuel_efficiency DROP DEFAULT;
 
 CREATE TABLE IF NOT EXISTS vehicles (
   id SERIAL PRIMARY KEY,

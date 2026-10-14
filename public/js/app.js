@@ -171,6 +171,7 @@ async function loadInitialData() {
     state.vehicles = profileData.vehicles;
     state.rates = profileData.rates;
     updateCockpitUI();
+    updateProfileUI();
     renderProfileVehicles();
     applyDriverPermissionsUI();
     loadWeekSummary();
@@ -202,6 +203,17 @@ function applyDriverPermissionsUI() {
   }
 }
 
+// Iniciais do nome pro avatar — não existe upload de foto de perfil, então
+// usar um stranger de banco de imagem (como era antes) mostrava a mesma foto
+// fake pra todo motorista novo.
+function getInitials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.[0] || '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (first + last).toUpperCase() || '?';
+}
+
 // Atualizar interface do Cockpit Pro
 function updateCockpitUI() {
   if (!state.driver) return;
@@ -210,17 +222,26 @@ function updateCockpitUI() {
   const driverNameEl = document.getElementById('cockpit-driver-name');
   if (driverNameEl) driverNameEl.textContent = d.name;
 
+  const avatarEl = document.getElementById('cockpit-avatar-initials');
+  if (avatarEl) avatarEl.textContent = getInitials(d.name);
+
+  const categoryEl = document.getElementById('cockpit-category-badge');
+  if (categoryEl) categoryEl.textContent = d.category || 'Novato';
+
   const earningsEl = document.getElementById('cockpit-earnings');
-  if (earningsEl) earningsEl.textContent = `R$ ${d.today_earnings.toFixed(2).replace('.', ',')}`;
+  if (earningsEl) earningsEl.textContent = `R$ ${Number(d.today_earnings || 0).toFixed(2).replace('.', ',')}`;
 
   const ridesEl = document.getElementById('cockpit-rides');
-  if (ridesEl) ridesEl.textContent = d.today_rides;
+  if (ridesEl) ridesEl.textContent = d.today_rides || 0;
 
   const hoursEl = document.getElementById('cockpit-hours');
-  if (hoursEl) hoursEl.textContent = d.today_hours;
+  if (hoursEl) hoursEl.textContent = d.today_hours || '0h 00m';
 
   const kmEl = document.getElementById('cockpit-km');
-  if (kmEl) kmEl.textContent = `${d.km_driven} km`;
+  if (kmEl) kmEl.textContent = `${d.km_driven || 0} km`;
+
+  const fuelEl = document.getElementById('cockpit-fuel-efficiency');
+  if (fuelEl) fuelEl.textContent = d.fuel_efficiency ? `${d.fuel_efficiency} km/L` : '—';
 
   // Veículo ativo
   const activeVeh = state.vehicles.find(v => v.is_active) || state.vehicles[0];
@@ -231,6 +252,42 @@ function updateCockpitUI() {
 
   // Status Online / Offline
   applyStatusVisuals(d.status === 'online');
+}
+
+// Atualizar a tela de Perfil com os dados reais do motorista (antes ficava
+// com nota/categoria/data de cadastro fixas no HTML, iguais pra qualquer
+// motorista novo).
+function updateProfileUI() {
+  if (!state.driver) return;
+  const d = state.driver;
+
+  const nameEl = document.getElementById('profile-driver-name');
+  if (nameEl) nameEl.textContent = d.name;
+
+  const avatarEl = document.getElementById('profile-avatar-initials');
+  if (avatarEl) avatarEl.textContent = getInitials(d.name);
+
+  const categoryEl = document.getElementById('profile-category-badge');
+  if (categoryEl) categoryEl.textContent = d.category || 'Novato';
+
+  const memberSinceEl = document.getElementById('profile-member-since');
+  if (memberSinceEl && d.created_at) {
+    const date = new Date(d.created_at);
+    const label = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    memberSinceEl.textContent = `Membro desde ${label.charAt(0).toUpperCase()}${label.slice(1)}`;
+  }
+
+  const ratingEl = document.getElementById('profile-rating');
+  if (ratingEl) ratingEl.textContent = d.rating ? `${Number(d.rating).toFixed(2)} ★` : 'Novo';
+
+  const acceptanceEl = document.getElementById('profile-acceptance');
+  if (acceptanceEl) acceptanceEl.textContent = `${d.acceptance_rate || 0}%`;
+
+  const cancellationEl = document.getElementById('profile-cancellation');
+  if (cancellationEl) cancellationEl.textContent = `${d.cancellation_rate || 0}%`;
+
+  const pixKeyEl = document.getElementById('profile-pix-key');
+  if (pixKeyEl) pixKeyEl.textContent = state.rates?.pix_key || 'Nenhuma chave cadastrada';
 }
 
 // Visual do status Online / Offline

@@ -95,8 +95,8 @@ function showForm() {
 
 function renderDriver() {
   document.getElementById('driver-name').textContent = state.driver.name;
-  document.getElementById('driver-rating').textContent = state.driver.rating;
-  document.getElementById('driver-category').textContent = state.driver.category;
+  document.getElementById('driver-rating').textContent = state.driver.rating ? Number(state.driver.rating).toFixed(2) : 'Novo';
+  document.getElementById('driver-category').textContent = state.driver.category || 'Novato';
 
   const vehicleEl = document.getElementById('driver-vehicle');
   vehicleEl.textContent = state.vehicle

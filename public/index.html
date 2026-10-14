@@ -411,15 +411,13 @@
       <div class="flex items-center justify-between bg-surface-card p-3.5 rounded-2xl border border-surface-border">
         <div class="flex items-center gap-3">
           <div class="relative">
-            <div class="w-12 h-12 rounded-xl bg-slate-800 border-2 border-brand overflow-hidden flex items-center justify-center text-slate-300 font-bold">
-              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80" alt="João Silva" class="w-full h-full object-cover">
-            </div>
+            <div id="cockpit-avatar-initials" class="w-12 h-12 rounded-xl bg-slate-800 border-2 border-brand overflow-hidden flex items-center justify-center text-brand font-display font-bold text-lg">?</div>
             <span id="cockpit-avatar-dot" class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-brand rounded-full border-2 border-surface-card pulse-online"></span>
           </div>
           <div>
             <div class="flex items-center gap-1.5">
               <h2 id="cockpit-driver-name" class="font-display font-bold text-sm text-white">Sr. João Silva</h2>
-              <span class="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded font-semibold">Diamante</span>
+              <span id="cockpit-category-badge" class="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded font-semibold">Novato</span>
             </div>
             <p id="cockpit-vehicle-info" class="text-xs text-slate-400">Onix Plus Premier • BRA2E19</p>
           </div>
@@ -454,7 +452,7 @@
         <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-800/80 text-center">
           <div>
             <p class="text-[10px] text-slate-400">Consumo Médio</p>
-            <p class="text-xs font-bold text-white mt-0.5">11.2 km/L</p>
+            <p id="cockpit-fuel-efficiency" class="text-xs font-bold text-white mt-0.5">—</p>
           </div>
           <div>
             <p class="text-[10px] text-slate-400">Autonomia</p>
@@ -753,16 +751,14 @@
       <!-- Profile Header Card -->
       <div class="bg-surface-card p-4 rounded-2xl border border-surface-border flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-14 h-14 rounded-2xl bg-slate-800 border-2 border-brand overflow-hidden">
-            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80" alt="João Silva" class="w-full h-full object-cover">
-          </div>
+          <div id="profile-avatar-initials" class="w-14 h-14 rounded-2xl bg-slate-800 border-2 border-brand overflow-hidden flex items-center justify-center text-brand font-display font-bold text-xl">?</div>
           <div>
             <div class="flex items-center gap-1.5">
-              <h2 class="font-display font-bold text-base text-white">Sr. João Silva</h2>
-              <span class="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded font-semibold">Diamante</span>
+              <h2 id="profile-driver-name" class="font-display font-bold text-base text-white">Sr. João Silva</h2>
+              <span id="profile-category-badge" class="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded font-semibold">Novato</span>
             </div>
             <p class="text-xs text-slate-400">Motorista Parceiro koren</p>
-            <p class="text-[10px] text-brand">Membro desde Março/2023</p>
+            <p id="profile-member-since" class="text-[10px] text-brand">Membro desde —</p>
           </div>
         </div>
 
@@ -780,19 +776,19 @@
       <div class="grid grid-cols-4 gap-2">
         <div class="bg-surface-card p-2.5 rounded-xl border border-surface-border text-center">
           <span class="text-[10px] text-slate-400">Avaliação</span>
-          <p class="text-sm font-bold text-yellow-400 mt-0.5">4.96 ★</p>
+          <p id="profile-rating" class="text-sm font-bold text-yellow-400 mt-0.5">—</p>
         </div>
         <div class="bg-surface-card p-2.5 rounded-xl border border-surface-border text-center">
           <span class="text-[10px] text-slate-400">Aceitação</span>
-          <p class="text-sm font-bold text-brand mt-0.5">98.4%</p>
+          <p id="profile-acceptance" class="text-sm font-bold text-brand mt-0.5">—</p>
         </div>
         <div class="bg-surface-card p-2.5 rounded-xl border border-surface-border text-center">
           <span class="text-[10px] text-slate-400">Cancela</span>
-          <p class="text-sm font-bold text-slate-300 mt-0.5">0.8%</p>
+          <p id="profile-cancellation" class="text-sm font-bold text-slate-300 mt-0.5">—</p>
         </div>
         <div class="bg-surface-card p-2.5 rounded-xl border border-surface-border text-center">
           <span class="text-[10px] text-slate-400">Tempo Médio</span>
-          <p class="text-sm font-bold text-slate-300 mt-0.5">6.2 min</p>
+          <p class="text-sm font-bold text-slate-300 mt-0.5">—</p>
         </div>
       </div>
 
@@ -819,7 +815,7 @@
             <span class="material-symbols-outlined text-brand text-lg">badge</span>
             <div>
               <p class="text-xs font-semibold text-white">CNH Digital</p>
-              <p class="text-[10px] text-slate-400">Validade: 2028 • Categoria B (EAR)</p>
+              <p class="text-[10px] text-slate-400">Frente e verso enviados no cadastro</p>
             </div>
           </div>
           <span class="text-[10px] text-brand bg-brand/10 px-2 py-0.5 rounded-full font-medium">Aprovado</span>
@@ -830,7 +826,7 @@
             <span class="material-symbols-outlined text-brand text-lg">currency_exchange</span>
             <div>
               <p class="text-xs font-semibold text-white">Chave Pix para Repasse</p>
-              <p class="text-[10px] text-slate-400">joao.silva@koren.app</p>
+              <p id="profile-pix-key" class="text-[10px] text-slate-400">—</p>
             </div>
           </div>
           <button class="text-xs text-brand font-semibold">Editar</button>
