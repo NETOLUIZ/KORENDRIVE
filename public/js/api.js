@@ -1,5 +1,7 @@
 // API client para comunicação com o backend korenDriver
-const API_BASE = '/api';
+const API_BASE = (typeof window !== 'undefined' && window.location.port && window.location.port !== '3000' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+  ? `http://${window.location.hostname}:3000/api`
+  : '/api';
 const TOKEN_KEY = 'koren_driver_token';
 
 function getToken() {
@@ -12,15 +14,30 @@ function setToken(token) {
 }
 
 async function authFetch(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${getToken()}`,
-      ...(options.headers || {})
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`,
+        ...(options.headers || {})
+      }
+    });
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { success: false, error: 'Resposta inválida do servidor.' };
     }
-  });
-  return res.json();
+    if (!res.ok && !data.error) {
+      data.error = `Erro do servidor (${res.status})`;
+    }
+    return data;
+  } catch (err) {
+    console.error(`Erro ao comunicar com ${path}:`, err);
+    return { success: false, error: 'Não foi possível conectar ao servidor. Verifique se o backend está em execução.' };
+  }
 }
 
 export const api = {
@@ -36,25 +53,47 @@ export const api = {
   },
 
   async login(identifier, password) {
-    const res = await fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier, password })
-    });
-    const data = await res.json();
-    if (res.ok && data.success) setToken(data.token);
-    return data;
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, password })
+      });
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        return { success: false, error: 'Resposta inválida do servidor.' };
+      }
+      if (res.ok && data.success) setToken(data.token);
+      return data;
+    } catch (err) {
+      console.error('Erro ao conectar ao login:', err);
+      return { success: false, error: 'Não foi possível conectar ao servidor. Verifique se o backend está rodando.' };
+    }
   },
 
   async registerDriver(data) {
-    const res = await fetch(`${API_BASE}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (res.ok && result.success) setToken(result.token);
-    return result;
+    try {
+      const res = await fetch(`${API_BASE}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const text = await res.text();
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch {
+        return { success: false, error: 'Resposta inesperada do servidor.' };
+      }
+      if (res.ok && result.success) setToken(result.token);
+      return result;
+    } catch (err) {
+      console.error('Erro ao conectar ao registro:', err);
+      return { success: false, error: 'Não foi possível conectar ao servidor. Verifique se o backend está rodando.' };
+    }
   },
 
   async logout() {

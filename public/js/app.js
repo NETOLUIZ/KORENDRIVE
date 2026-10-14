@@ -452,30 +452,53 @@ async function handleCrlvCapture(event) {
   showToast('CRLV anexado com sucesso!');
 }
 
+// Exibir erro fixo destacado no formulário de cadastro
+function showRegisterError(element, message) {
+  if (element) {
+    element.innerHTML = `
+      <span class="material-symbols-outlined text-base text-red-400 shrink-0">error</span>
+      <span class="leading-tight">${message}</span>
+    `;
+    element.classList.remove('hidden');
+    element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
 // Cadastro Passo 1
 async function handleRegisterStep1(event) {
   event.preventDefault();
+  const errorEl = document.getElementById('register-step1-error');
+  if (errorEl) errorEl.classList.add('hidden');
 
   const termsAccepted = document.getElementById('reg-terms-accept').checked;
   if (!termsAccepted) {
-    showToast('É necessário aceitar os Termos de Uso e a Política de Privacidade.');
+    const msg = 'É necessário aceitar os Termos de Uso e a Política de Privacidade para prosseguir.';
+    showRegisterError(errorEl, msg);
+    showToast(msg);
     return;
   }
 
-  const name = document.getElementById('reg-name').value;
-  const cpf = document.getElementById('reg-cpf').value;
-  const phone = document.getElementById('reg-phone').value;
-  const email = document.getElementById('reg-email').value;
+  const name = document.getElementById('reg-name').value.trim();
+  const cpf = document.getElementById('reg-cpf').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
   const password = document.getElementById('reg-pwd').value;
 
-  const street = document.getElementById('reg-street').value;
-  const number = document.getElementById('reg-number').value;
-  const neighborhood = document.getElementById('reg-neighborhood').value;
-  const city = document.getElementById('reg-city').value;
-  const stateUf = document.getElementById('reg-state').value;
-  const cep = document.getElementById('reg-cep').value;
+  if (!name || !cpf || !phone || !email || !password) {
+    const msg = 'Por favor, preencha todos os campos obrigatórios.';
+    showRegisterError(errorEl, msg);
+    showToast(msg);
+    return;
+  }
 
-  const address = `${street}, ${number} - ${neighborhood}, ${city} - ${stateUf}, ${cep}`;
+  const street = document.getElementById('reg-street').value.trim();
+  const number = document.getElementById('reg-number').value.trim();
+  const neighborhood = document.getElementById('reg-neighborhood').value.trim();
+  const city = document.getElementById('reg-city').value.trim();
+  const stateUf = document.getElementById('reg-state').value.trim();
+  const cep = document.getElementById('reg-cep').value.trim();
+
+  const address = street ? `${street}, ${number} - ${neighborhood}, ${city} - ${stateUf}, ${cep}` : '';
 
   showToast('Dados salvos! Avançando para o veículo...');
   state.pendingRegistration = {
@@ -504,44 +527,77 @@ function setupFuelSelector() {
 // Cadastro Passo 2
 async function handleRegisterStep2(event) {
   event.preventDefault();
-  const plate = document.getElementById('reg-veh-plate').value;
-  const model = document.getElementById('reg-veh-model').value;
-  const year = document.getElementById('reg-veh-year').value;
-  const color = document.getElementById('reg-veh-color').value;
+  const errorEl = document.getElementById('register-step2-error');
+  const submitBtn = document.getElementById('btn-submit-step2');
+  if (errorEl) errorEl.classList.add('hidden');
+
+  const plate = document.getElementById('reg-veh-plate').value.trim().toUpperCase();
+  const model = document.getElementById('reg-veh-model').value.trim();
+  const year = document.getElementById('reg-veh-year').value.trim();
+  const color = document.getElementById('reg-veh-color').value.trim();
+
+  if (!plate || !model) {
+    const msg = 'Por favor, informe a placa e o modelo do veículo.';
+    showRegisterError(errorEl, msg);
+    showToast(msg);
+    return;
+  }
+
+  // Estado de carregamento no botão
+  const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <span class="inline-block w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+      <span>Concluindo cadastro...</span>
+    `;
+  }
 
   try {
     // Se havia registro de motorista pendente
     if (state.pendingRegistration) {
       const regRes = await api.registerDriver(state.pendingRegistration);
       if (!regRes.success) {
-        showToast(regRes.error || 'Erro ao cadastrar motorista.');
+        const errorMsg = regRes.error || 'Erro ao cadastrar motorista.';
+        showRegisterError(errorEl, errorMsg);
+        showToast(errorMsg);
         return;
       }
       state.driver = regRes.driver;
       state.pendingRegistration = null;
     }
 
-    // Cadastrar veículo (usa o token recém-criado no registro)
+    // Cadastrar veículo (usa a sessão autenticada do motorista recém-criado)
     const vehRes = await api.registerVehicle({
       plate,
       model,
-      year,
-      color,
-      fuel_type: state.selectedFuel,
+      year: year ? parseInt(year, 10) : 2024,
+      color: color || 'Prata',
+      fuel_type: state.selectedFuel || 'Flex',
       photo_url: state.vehiclePhotoData || '',
       crlv_url: state.crlvData || ''
     });
 
-    if (vehRes.success) {
+    if (vehRes && (vehRes.success || vehRes.vehicle)) {
       showToast('Cadastro concluído com sucesso!');
       await loadInitialData();
       navigateTo('cockpit');
       initDemandMap();
     } else {
-      showToast(vehRes.error || 'Erro ao cadastrar veículo.');
+      const errorMsg = (vehRes && vehRes.error) ? vehRes.error : 'Erro ao cadastrar veículo.';
+      showRegisterError(errorEl, errorMsg);
+      showToast(errorMsg);
     }
   } catch (err) {
-    showToast('Erro ao concluir o cadastro.');
+    console.error('Erro detalhado no cadastro:', err);
+    const errorMsg = err.message || 'Erro inesperado ao concluir o cadastro. Verifique a conexão com o servidor.';
+    showRegisterError(errorEl, errorMsg);
+    showToast(errorMsg);
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnHtml;
+    }
   }
 }
 

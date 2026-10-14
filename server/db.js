@@ -21,7 +21,17 @@ pg.types.setTypeParser(20, (val) => parseInt(val, 10)); // BIGINT (ex: COUNT(*))
 // existe exceção pra isso). A role padrão do Postgres em Docker (POSTGRES_USER)
 // É superusuário, então ela só é usada aqui pra rodar a migração/schema —
 // nunca pra servir requisição.
-export const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const pgHost = process.env.POSTGRES_HOST || '127.0.0.1';
+const pgPort = process.env.POSTGRES_PORT || '5432';
+const pgDb = process.env.POSTGRES_DB || 'koren_driver';
+const appPassword = process.env.APP_DB_PASSWORD || 'dev_local_app_only_change_in_prod';
+const pgUser = process.env.POSTGRES_USER || 'koren';
+const pgPassword = process.env.POSTGRES_PASSWORD || 'dev_local_only_change_in_prod';
+
+export const DATABASE_URL = process.env.DATABASE_URL || `postgres://koren_app:${encodeURIComponent(appPassword)}@${pgHost}:${pgPort}/${pgDb}`;
+export const MIGRATION_DATABASE_URL = process.env.MIGRATION_DATABASE_URL || `postgres://${encodeURIComponent(pgUser)}:${encodeURIComponent(pgPassword)}@${pgHost}:${pgPort}/${pgDb}`;
+
+export const pool = new pg.Pool({ connectionString: DATABASE_URL });
 
 function slugify(str) {
   const from = String.fromCharCode(0x0300);
@@ -86,7 +96,7 @@ export async function initDB() {
   // de confiança total, não uma requisição de usuário, então não faz sentido
   // (e não funcionaria: RLS bloquearia os inserts de seed sem sessão) rodar
   // isso pela role restrita.
-  const migrationPool = new pg.Pool({ connectionString: process.env.MIGRATION_DATABASE_URL });
+  const migrationPool = new pg.Pool({ connectionString: MIGRATION_DATABASE_URL });
   const client = await migrationPool.connect();
   try {
     const schemaSql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');

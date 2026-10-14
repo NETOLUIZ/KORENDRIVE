@@ -26,8 +26,24 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s
 
 // Middlewares
 app.use(helmet({ contentSecurityPolicy: false })); // CSP desligado: o app serve HTML com scripts inline/CDN próprios
-app.use(cors(allowedOrigins.length > 0 ? { origin: allowedOrigins } : {}));
-app.use(express.json());
+
+const corsOptions = isProduction && allowedOrigins.length > 0
+  ? { origin: allowedOrigins }
+  : {
+      origin: (origin, callback) => {
+        if (!origin || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Origem não permitida pelo CORS'));
+        }
+      }
+    };
+
+app.use(cors(corsOptions));
+// Limite padrão do Express é 100kb — pequeno demais aqui: o cadastro envia fotos
+// (CNH, veículo, CRLV) como base64 dentro do próprio JSON, e mesmo comprimidas
+// no cliente (900px, qualidade 0.75) facilmente passam disso.
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Rate limit nas rotas de login — únicos pontos de força bruta de senha do app
