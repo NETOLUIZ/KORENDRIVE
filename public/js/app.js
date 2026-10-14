@@ -60,8 +60,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (api.getToken()) {
     const ok = await loadInitialData();
     if (ok) {
-      navigateTo('cockpit');
-      initDemandMap();
+      const screen = decidePostAuthScreen(state.driver);
+      navigateTo(screen);
+      if (screen === 'cockpit') initDemandMap();
       return;
     }
   }
@@ -158,6 +159,36 @@ function navigateTo(screenId) {
   if (screenId === 'expenses') loadExpenses();
   if (screenId === 'rides') loadRidesAndRates();
   if (screenId === 'profile') loadProfile();
+  if (screenId === 'pending-approval') updatePendingApprovalUI();
+}
+
+// Pra onde ir depois de login/registro/boot: Cockpit só se o cadastro já foi
+// aprovado — senão (pending/rejected) cai na tela de status, nunca no resto do app.
+function decidePostAuthScreen(driver) {
+  if (!driver) return 'login';
+  return driver.approval_status === 'approved' ? 'cockpit' : 'pending-approval';
+}
+
+function updatePendingApprovalUI() {
+  const d = state.driver;
+  if (!d) return;
+  const isRejected = d.approval_status === 'rejected';
+
+  const titleEl = document.getElementById('pending-title');
+  if (titleEl) titleEl.textContent = isRejected ? 'Cadastro não aprovado' : 'Cadastro em análise';
+
+  const messageEl = document.getElementById('pending-message');
+  if (messageEl) {
+    messageEl.textContent = isRejected
+      ? 'Seu cadastro não foi aprovado desta vez.'
+      : 'Seu cadastro está em análise. Você será avisado por WhatsApp assim que for aprovado.';
+  }
+
+  const reasonBox = document.getElementById('pending-reason-box');
+  const reasonText = document.getElementById('pending-reason-text');
+  const showReason = isRejected && Boolean(d.rejection_reason);
+  if (reasonBox) reasonBox.classList.toggle('hidden', !showReason);
+  if (reasonText && showReason) reasonText.textContent = d.rejection_reason;
 }
 
 // Carregamento inicial de dados. Retorna false se a sessão não for mais válida.
@@ -367,8 +398,9 @@ async function handleLoginSubmit(event) {
     if (res.success) {
       showToast(`Bem-vindo, ${res.driver.name}!`);
       await loadInitialData();
-      navigateTo('cockpit');
-      initDemandMap();
+      const screen = decidePostAuthScreen(state.driver);
+      navigateTo(screen);
+      if (screen === 'cockpit') initDemandMap();
     } else {
       showToast(res.error || 'Credenciais inválidas.');
     }
@@ -639,8 +671,9 @@ async function handleRegisterStep2(event) {
     if (vehRes && (vehRes.success || vehRes.vehicle)) {
       showToast('Cadastro concluído com sucesso!');
       await loadInitialData();
-      navigateTo('cockpit');
-      initDemandMap();
+      const screen = decidePostAuthScreen(state.driver);
+      navigateTo(screen);
+      if (screen === 'cockpit') initDemandMap();
     } else {
       const errorMsg = (vehRes && vehRes.error) ? vehRes.error : 'Erro ao cadastrar veículo.';
       showRegisterError(errorEl, errorMsg);

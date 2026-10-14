@@ -1,12 +1,12 @@
 import express from 'express';
-import { requireDriver } from '../middleware/auth.js';
+import { requireDriver, requireApprovedDriver } from '../middleware/auth.js';
 import { withDbContext } from '../middleware/dbContext.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = express.Router();
 
 // Listar tarifas e histórico de corridas do motorista autenticado
-router.get('/', requireDriver, withDbContext, asyncHandler(async (req, res) => {
+router.get('/', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
   const { rows: rateRows } = await req.db.query('SELECT * FROM driver_rates WHERE driver_id = $1', [req.driver.id]);
   const rates = rateRows[0] || { base_fare: 6.50, km_rate: 2.75, minute_rate: 0.45, min_fare: 15.00, pix_key: '' };
 
@@ -19,7 +19,7 @@ router.get('/', requireDriver, withDbContext, asyncHandler(async (req, res) => {
 }));
 
 // Atualizar tarifas particulares
-router.put('/rates', requireDriver, withDbContext, asyncHandler(async (req, res) => {
+router.put('/rates', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
   const { base_fare, km_rate, minute_rate, min_fare, pix_key } = req.body;
 
   if (req.driver.can_edit_rates === false) {
@@ -49,7 +49,7 @@ router.put('/rates', requireDriver, withDbContext, asyncHandler(async (req, res)
 }));
 
 // Resumo de corridas dos últimos 7 dias (alimenta o Cockpit)
-router.get('/week-summary', requireDriver, withDbContext, asyncHandler(async (req, res) => {
+router.get('/week-summary', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
   const { rows } = await req.db.query(`
     SELECT COUNT(*) as count, COALESCE(SUM(fare), 0) as total
     FROM rides
@@ -60,7 +60,7 @@ router.get('/week-summary', requireDriver, withDbContext, asyncHandler(async (re
 }));
 
 // Registrar uma corrida realizada
-router.post('/', requireDriver, withDbContext, asyncHandler(async (req, res) => {
+router.post('/', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
   const { passenger_name, passenger_phone, origin, destination, distance_km, duration_min, fare, notes } = req.body;
 
   if (!passenger_name || !origin || !destination || !fare) {
@@ -83,7 +83,7 @@ router.post('/', requireDriver, withDbContext, asyncHandler(async (req, res) => 
 }));
 
 // Simular estimativa de corrida particular
-router.post('/simulate', requireDriver, withDbContext, asyncHandler(async (req, res) => {
+router.post('/simulate', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
   const { distance_km, duration_min } = req.body;
 
   const { rows: rateRows } = await req.db.query('SELECT * FROM driver_rates WHERE driver_id = $1', [req.driver.id]);

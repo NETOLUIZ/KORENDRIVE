@@ -1,8 +1,9 @@
 import express from 'express';
 import crypto from 'node:crypto';
-import { hashPassword, verifyPassword, createSession, requireSuperAdmin } from '../middleware/auth.js';
+import { hashPassword, verifyPassword, createSession, requireSuperAdmin, publicDriver } from '../middleware/auth.js';
 import { withDbContext } from '../middleware/dbContext.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { handleDriverApproval } from '../utils/driverApproval.js';
 
 const router = express.Router();
 
@@ -118,6 +119,35 @@ router.patch('/admins/:id/payment-status', requireSuperAdmin, withDbContext, asy
   );
   if (!rows[0]) return res.status(404).json({ error: 'Admin não encontrado' });
   res.json({ success: true, admin: publicAdmin(rows[0]) });
+}));
+
+// Listar motoristas independentes (sem empresa vinculada)
+router.get('/drivers', requireSuperAdmin, withDbContext, asyncHandler(async (req, res) => {
+  const { rows: drivers } = await req.db.query(`
+    SELECT id, name, phone, email, status, category, rating, approval_status, created_at
+    FROM drivers WHERE admin_id IS NULL ORDER BY (approval_status = 'pending') DESC, created_at DESC
+  `);
+
+  res.json({ drivers });
+}));
+
+// Detalhe completo de um motorista independente (documentos pra revisão de cadastro)
+router.get('/drivers/:id', requireSuperAdmin, withDbContext, asyncHandler(async (req, res) => {
+  const { rows } = await req.db.query('SELECT * FROM drivers WHERE id = $1 AND admin_id IS NULL', [req.params.id]);
+  const driver = rows[0];
+  if (!driver) {
+    return res.status(404).json({ error: 'Motorista não encontrado' });
+  }
+
+  const { rows: vehicles } = await req.db.query('SELECT * FROM vehicles WHERE driver_id = $1 ORDER BY is_active DESC', [req.params.id]);
+  res.json({ driver: publicDriver(driver), vehicles });
+}));
+
+// Aprovar ou rejeitar o cadastro de um motorista independente
+router.patch('/drivers/:id/approval', requireSuperAdmin, withDbContext, asyncHandler(async (req, res) => {
+  await handleDriverApproval(req, res, {
+    extraWhereSql: 'admin_id IS NULL'
+  });
 }));
 
 // Logout

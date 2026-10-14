@@ -156,6 +156,27 @@
       </div>
     </section>
 
+    <!-- ==================== TELA: CADASTRO EM ANÁLISE ==================== -->
+    <section id="view-pending-approval" class="screen-view hidden fade-in w-full">
+      <div class="flex flex-col items-center text-center my-10">
+        <div class="w-20 h-20 rounded-2xl bg-brand/10 border border-brand/40 flex items-center justify-center mb-4">
+          <span class="material-symbols-outlined text-brand text-5xl">hourglass_top</span>
+        </div>
+        <h1 id="pending-title" class="text-2xl font-display font-bold text-white">Cadastro em análise</h1>
+        <p id="pending-message" class="text-sm text-slate-400 mt-3 max-w-xs">Seu cadastro está em análise. Você será avisado por WhatsApp assim que for aprovado.</p>
+
+        <div id="pending-reason-box" class="hidden mt-5 w-full max-w-xs bg-surface-card border border-red-500/30 rounded-xl p-3.5 text-left">
+          <p class="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-1">Motivo</p>
+          <p id="pending-reason-text" class="text-xs text-slate-300"></p>
+        </div>
+
+        <button onclick="handleLogout()" class="mt-8 flex items-center gap-2 text-xs text-slate-400 hover:text-white font-semibold">
+          <span class="material-symbols-outlined text-base">logout</span>
+          Sair
+        </button>
+      </div>
+    </section>
+
     <!-- ==================== TELA 2: CADASTRO PASSO 1 (DADOS PESSOAIS) ==================== -->
     <section id="view-register-step1" class="screen-view hidden fade-in w-full">
       <!-- Header do Passo -->
@@ -415,10 +436,10 @@
           </div>
           <div>
             <div class="flex items-center gap-1.5">
-              <h2 id="cockpit-driver-name" class="font-display font-bold text-sm text-white">Sr. João Silva</h2>
+              <h2 id="cockpit-driver-name" class="font-display font-bold text-sm text-white">Motorista</h2>
               <span id="cockpit-category-badge" class="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded font-semibold">Novato</span>
             </div>
-            <p id="cockpit-vehicle-info" class="text-xs text-slate-400">Onix Plus Premier • BRA2E19</p>
+            <p id="cockpit-vehicle-info" class="text-xs text-slate-400">—</p>
           </div>
         </div>
 
@@ -471,7 +492,7 @@
           <span class="text-[10px] bg-brand/10 text-brand border border-brand/30 px-2 py-0.5 rounded-full font-semibold">+18.4% vs ontem</span>
         </div>
         <div class="flex items-baseline gap-2 mb-3">
-          <span id="cockpit-earnings" class="text-3xl font-display font-extrabold text-white">R$ 284,50</span>
+          <span id="cockpit-earnings" class="text-3xl font-display font-extrabold text-white">R$ 0,00</span>
           <span class="text-xs text-slate-400">Líquido</span>
         </div>
 
@@ -479,17 +500,17 @@
           <div class="bg-surface-subtle p-2 rounded-xl">
             <span class="material-symbols-outlined text-brand text-sm">hail</span>
             <p class="text-[10px] text-slate-400">Corridas</p>
-            <p id="cockpit-rides" class="text-xs font-bold text-white">8</p>
+            <p id="cockpit-rides" class="text-xs font-bold text-white">0</p>
           </div>
           <div class="bg-surface-subtle p-2 rounded-xl">
             <span class="material-symbols-outlined text-brand text-sm">schedule</span>
             <p class="text-[10px] text-slate-400">Tempo Online</p>
-            <p id="cockpit-hours" class="text-xs font-bold text-white">4h 30m</p>
+            <p id="cockpit-hours" class="text-xs font-bold text-white">0h 00m</p>
           </div>
           <div class="bg-surface-subtle p-2 rounded-xl">
             <span class="material-symbols-outlined text-brand text-sm">speed</span>
             <p class="text-[10px] text-slate-400">Km Rodados</p>
-            <p id="cockpit-km" class="text-xs font-bold text-white">86.5 km</p>
+            <p id="cockpit-km" class="text-xs font-bold text-white">0 km</p>
           </div>
         </div>
       </div>
@@ -753,7 +774,7 @@
           <div id="profile-avatar-initials" class="w-14 h-14 rounded-2xl bg-slate-800 border-2 border-brand overflow-hidden flex items-center justify-center text-brand font-display font-bold text-xl">?</div>
           <div>
             <div class="flex items-center gap-1.5">
-              <h2 id="profile-driver-name" class="font-display font-bold text-base text-white">Sr. João Silva</h2>
+              <h2 id="profile-driver-name" class="font-display font-bold text-base text-white">Motorista</h2>
               <span id="profile-category-badge" class="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded font-semibold">Novato</span>
             </div>
             <p class="text-xs text-slate-400">Motorista Parceiro korenDriver</p>

@@ -112,6 +112,10 @@
             <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
             <span class="sa-nav-label">Administradores</span>
           </div>
+          <div class="sa-nav-item" data-page="motoristas-independentes" onclick="navigateSA('motoristas-independentes')">
+            <span class="material-symbols-outlined text-[20px]">local_taxi</span>
+            <span class="sa-nav-label">Motoristas Independentes</span>
+          </div>
           <div class="sa-nav-item" data-page="empresas" onclick="navigateSA('empresas')">
             <span class="material-symbols-outlined text-[20px]">business</span>
             <span class="sa-nav-label">Empresas</span>
@@ -402,6 +406,37 @@
               </div>
             </div>
 
+            <!-- ===== PÁGINA: MOTORISTAS INDEPENDENTES ===== -->
+            <div id="page-motoristas-independentes" class="hidden">
+              <div class="sa-card p-5">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
+                  <div>
+                    <span class="text-[13px] font-semibold text-satext1">Motoristas Independentes</span>
+                    <p class="text-[12px] text-satext2">Cadastros sem empresa vinculada — aprovação é do Super Admin.</p>
+                  </div>
+                  <span id="independent-driver-count-label" class="text-[12px] text-satext2">0 motoristas</span>
+                </div>
+
+                <div class="overflow-x-auto -mx-5 mt-4">
+                  <table class="w-full sa-table" style="min-width:560px;">
+                    <thead>
+                      <tr>
+                        <th>Motorista</th>
+                        <th>Contato</th>
+                        <th>Status</th>
+                        <th>Cadastrado em</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="independent-drivers-table-body"></tbody>
+                  </table>
+                  <p id="independent-drivers-empty-msg" class="hidden text-center text-satext2 text-[13px] py-10">
+                    Nenhum motorista independente cadastrado ainda.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <!-- ===== PÁGINA: PLACEHOLDER (Empresas / Assinaturas / Pagamentos / Relatórios / Configurações) ===== -->
             <div id="page-placeholder" class="hidden">
               <div class="sa-card p-12 flex flex-col items-center justify-center text-center gap-3" style="min-height: 360px;">
@@ -417,6 +452,54 @@
           </div>
         </main>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal de Revisão de Cadastro -->
+  <div id="modal-driver-review" class="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="sa-card w-full max-w-md p-5 space-y-4 sa-fade-in max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <h3 class="text-[14px] font-bold text-satext1">Revisar Cadastro</h3>
+        <button onclick="closeDriverReviewModal()" class="w-7 h-7 rounded-lg bg-sabg2 flex items-center justify-center text-satext2 hover:text-satext1">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+
+      <div id="review-driver-info" class="space-y-1 text-[12px] text-satext2">
+        <!-- Preenchido via JS -->
+      </div>
+
+      <div>
+        <p class="text-[10px] font-bold text-satext2 uppercase tracking-wider mb-1.5">CNH</p>
+        <div class="grid grid-cols-2 gap-2">
+          <img id="review-cnh-front" class="w-full h-24 object-cover rounded-lg border border-saborder bg-sabg2">
+          <img id="review-cnh-back" class="w-full h-24 object-cover rounded-lg border border-saborder bg-sabg2">
+        </div>
+      </div>
+
+      <div id="review-vehicle-section">
+        <p class="text-[10px] font-bold text-satext2 uppercase tracking-wider mb-1.5">Veículo</p>
+        <div id="review-vehicle-info" class="text-[12px] text-satext2 mb-2"></div>
+        <div class="grid grid-cols-2 gap-2">
+          <img id="review-vehicle-photo" class="w-full h-24 object-cover rounded-lg border border-saborder bg-sabg2">
+          <img id="review-vehicle-crlv" class="w-full h-24 object-cover rounded-lg border border-saborder bg-sabg2">
+        </div>
+      </div>
+
+      <div id="review-reject-reason-box" class="hidden">
+        <label class="block text-[12px] font-medium text-satext2 mb-1">Motivo da rejeição</label>
+        <textarea id="review-reject-reason" rows="2" class="w-full bg-sabg2 border border-saborder focus:border-sagreen rounded-xl px-3 py-2 text-[12px] text-satext1 outline-none"></textarea>
+      </div>
+
+      <div id="review-actions" class="grid grid-cols-2 gap-2 pt-1">
+        <button id="btn-reject-driver" onclick="handleRejectDriverClick()" class="py-2.5 rounded-xl border border-sared/40 text-sared font-semibold text-[13px] hover:bg-sared/5 transition">
+          Rejeitar
+        </button>
+        <button onclick="handleApproveDriverClick()" class="sa-btn-primary py-2.5 rounded-xl text-[13px]">
+          Aprovar
+        </button>
+      </div>
+      <p id="review-decided-msg" class="hidden text-center text-[12px] text-satext2 py-1">Este cadastro já foi avaliado.</p>
     </div>
   </div>
 

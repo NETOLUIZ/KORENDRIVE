@@ -1,12 +1,12 @@
 import express from 'express';
-import { requireDriver } from '../middleware/auth.js';
+import { requireDriver, requireApprovedDriver } from '../middleware/auth.js';
 import { withDbContext } from '../middleware/dbContext.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = express.Router();
 
 // Listar veículos do motorista autenticado
-router.get('/', requireDriver, withDbContext, asyncHandler(async (req, res) => {
+router.get('/', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
   const { rows: vehicles } = await req.db.query(
     'SELECT * FROM vehicles WHERE driver_id = $1 ORDER BY is_active DESC, id DESC',
     [req.driver.id]
@@ -48,7 +48,7 @@ router.post('/', requireDriver, withDbContext, asyncHandler(async (req, res) => 
 }));
 
 // Ativar veículo selecionado (dono verificado via driver_id = req.driver.id na query, não confiando em nada do corpo)
-router.patch('/:id/activate', requireDriver, withDbContext, asyncHandler(async (req, res) => {
+router.patch('/:id/activate', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
   await req.db.query('UPDATE vehicles SET is_active = false WHERE driver_id = $1', [req.driver.id]);
   const { rows } = await req.db.query(
     'UPDATE vehicles SET is_active = true WHERE id = $1 AND driver_id = $2 RETURNING *',

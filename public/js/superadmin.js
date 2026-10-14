@@ -6,6 +6,8 @@ import { superadminApi } from './superadmin-api.js';
 const state = {
   admins: [],       // vem de GET /admins (tem created_at, usado pros gráficos honestos)
   billing: null,    // vem de GET /billing-summary (totais oficiais, calculados no servidor)
+  independentDrivers: [], // vem de GET /drivers (motoristas sem admin_id)
+  selectedDriverId: null,
   revenuePeriod: '6m',
   currentPage: 'dashboard'
 };
@@ -25,6 +27,10 @@ window.closeMobileSidebar = closeMobileSidebar;
 window.toggleUserMenu = toggleUserMenu;
 window.toggleRowMenu = toggleRowMenu;
 window.togglePasswordVisibility = togglePasswordVisibility;
+window.openDriverReviewModal = openDriverReviewModal;
+window.closeDriverReviewModal = closeDriverReviewModal;
+window.handleApproveDriverClick = handleApproveDriverClick;
+window.handleRejectDriverClick = handleRejectDriverClick;
 
 function togglePasswordVisibility(inputId, iconId) {
   const input = document.getElementById(inputId);
@@ -66,6 +72,7 @@ function showDashboard() {
   document.getElementById('view-dashboard').classList.remove('hidden');
   renderAdminsTable();
   loadBillingSummary();
+  loadIndependentDrivers();
 }
 
 // ============================================================================
@@ -81,6 +88,7 @@ function navigateSA(page) {
   const titles = {
     dashboard: ['Dashboard', 'Visão geral da plataforma'],
     administradores: ['Administradores', 'Gerencie os administradores cadastrados'],
+    'motoristas-independentes': ['Motoristas Independentes', 'Cadastros aguardando aprovação do super admin'],
     empresas: ['Empresas', 'Empresas parceiras da plataforma'],
     assinaturas: ['Assinaturas', 'Planos e assinaturas ativas'],
     pagamentos: ['Pagamentos', 'Histórico e cobranças'],
@@ -91,9 +99,10 @@ function navigateSA(page) {
   document.getElementById('page-title').textContent = title;
   document.getElementById('page-subtitle').textContent = subtitle;
 
-  const isDashboard = page === 'dashboard' || page === 'administradores';
+  const isDashboard = page === 'dashboard' || page === 'administradores' || page === 'motoristas-independentes';
   document.getElementById('page-dashboard').classList.toggle('hidden', page !== 'dashboard');
   document.getElementById('page-administradores').classList.toggle('hidden', page !== 'administradores');
+  document.getElementById('page-motoristas-independentes').classList.toggle('hidden', page !== 'motoristas-independentes');
   document.getElementById('page-placeholder').classList.toggle('hidden', isDashboard);
 
   if (!isDashboard) {
@@ -672,6 +681,149 @@ function statusBadgeSmallGreen() {
 }
 function statusBadgeSmallRed() {
   return `<span class="sa-badge sa-badge-red shrink-0">Em atraso</span>`;
+}
+
+// ============================================================================
+// Motoristas Independentes — cadastros sem empresa vinculada, aprovados/
+// rejeitados direto pelo Super Admin.
+// ============================================================================
+async function loadIndependentDrivers() {
+  const res = await superadminApi.listDrivers();
+  if (!res.ok) return;
+  state.independentDrivers = res.drivers;
+  renderIndependentDriversTable();
+}
+
+function approvalBadge(approvalStatus) {
+  const map = {
+    pending: 'sa-badge sa-badge-yellow',
+    approved: 'sa-badge sa-badge-green',
+    rejected: 'sa-badge sa-badge-red'
+  };
+  const label = { pending: 'Pendente', approved: 'Aprovado', rejected: 'Rejeitado' }[approvalStatus] || 'Pendente';
+  return `<span class="${map[approvalStatus] || map.pending}">${label}</span>`;
+}
+
+function renderIndependentDriversTable() {
+  const tbody = document.getElementById('independent-drivers-table-body');
+  const emptyMsg = document.getElementById('independent-drivers-empty-msg');
+  const countLabel = document.getElementById('independent-driver-count-label');
+  if (!tbody) return;
+
+  countLabel.textContent = `${state.independentDrivers.length} motorista${state.independentDrivers.length === 1 ? '' : 's'}`;
+
+  if (state.independentDrivers.length === 0) {
+    tbody.innerHTML = '';
+    emptyMsg.classList.remove('hidden');
+    return;
+  }
+  emptyMsg.classList.add('hidden');
+
+  tbody.innerHTML = state.independentDrivers.map(d => `
+    <tr>
+      <td class="font-semibold text-satext1">${d.name}</td>
+      <td>${d.email}<br><span class="text-[11px] text-satext2">${d.phone || ''}</span></td>
+      <td>${approvalBadge(d.approval_status)}</td>
+      <td>${new Date(d.created_at).toLocaleDateString('pt-BR')}</td>
+      <td>
+        <button onclick="openDriverReviewModal(${d.id})" class="text-sagreen font-semibold hover:underline">
+          ${d.approval_status === 'pending' ? 'Revisar' : 'Ver'}
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function openDriverReviewModal(id) {
+  const res = await superadminApi.getDriverDetail(id);
+  if (!res.ok || !res.driver) {
+    showToast(res.error || 'Erro ao carregar motorista.');
+    return;
+  }
+
+  state.selectedDriverId = id;
+  const d = res.driver;
+  const vehicle = (res.vehicles || []).find(v => v.is_active) || (res.vehicles || [])[0];
+
+  document.getElementById('review-driver-info').innerHTML = `
+    <p class="text-[13px] font-bold text-satext1">${d.name}</p>
+    <p>${d.email}</p>
+    <p>${d.phone || ''}</p>
+    <p>${d.cpf || ''}</p>
+    <p>${d.address || ''}</p>
+  `;
+
+  document.getElementById('review-cnh-front').src = d.cnh_front || '';
+  document.getElementById('review-cnh-back').src = d.cnh_back || '';
+
+  const vehicleSection = document.getElementById('review-vehicle-section');
+  if (vehicle) {
+    vehicleSection.classList.remove('hidden');
+    document.getElementById('review-vehicle-info').textContent = `${vehicle.model} • ${vehicle.plate} • ${vehicle.color}`;
+    document.getElementById('review-vehicle-photo').src = vehicle.photo_url || '';
+    document.getElementById('review-vehicle-crlv').src = vehicle.crlv_url || '';
+  } else {
+    vehicleSection.classList.add('hidden');
+  }
+
+  const reasonBox = document.getElementById('review-reject-reason-box');
+  reasonBox.classList.add('hidden');
+  document.getElementById('review-reject-reason').value = '';
+  document.getElementById('btn-reject-driver').textContent = 'Rejeitar';
+
+  const isPending = d.approval_status === 'pending';
+  document.getElementById('review-actions').classList.toggle('hidden', !isPending);
+  document.getElementById('review-decided-msg').classList.toggle('hidden', isPending);
+
+  const modal = document.getElementById('modal-driver-review');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeDriverReviewModal() {
+  const modal = document.getElementById('modal-driver-review');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  state.selectedDriverId = null;
+}
+
+async function handleApproveDriverClick() {
+  if (!state.selectedDriverId) return;
+  const res = await superadminApi.setDriverApproval(state.selectedDriverId, 'approve');
+  if (res.ok && res.success) {
+    showToast('Motorista aprovado!');
+    closeDriverReviewModal();
+    await loadIndependentDrivers();
+  } else {
+    showToast(res.error || 'Erro ao aprovar motorista.');
+  }
+}
+
+function handleRejectDriverClick() {
+  const box = document.getElementById('review-reject-reason-box');
+  if (box.classList.contains('hidden')) {
+    box.classList.remove('hidden');
+    document.getElementById('btn-reject-driver').textContent = 'Confirmar rejeição';
+    return;
+  }
+  confirmRejectDriver();
+}
+
+async function confirmRejectDriver() {
+  const reason = document.getElementById('review-reject-reason').value.trim();
+  if (!reason) {
+    showToast('Informe o motivo da rejeição.');
+    return;
+  }
+
+  const res = await superadminApi.setDriverApproval(state.selectedDriverId, 'reject', reason);
+  if (res.ok && res.success) {
+    showToast('Motorista rejeitado.');
+    closeDriverReviewModal();
+    await loadIndependentDrivers();
+  } else {
+    showToast(res.error || 'Erro ao rejeitar motorista.');
+  }
 }
 
 // ============================================================================

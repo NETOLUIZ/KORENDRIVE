@@ -119,3 +119,17 @@ export async function requireDriver(req, res, next) {
     next(err);
   }
 }
+
+// Bloqueia as funcionalidades do app pra motorista ainda não aprovado (ou
+// rejeitado) — ele consegue logar e ver a própria tela de status, mas nada
+// além disso. Vem sempre depois de requireDriver, que já populou req.driver.
+export function requireApprovedDriver(req, res, next) {
+  if (req.driver.approval_status !== 'approved') {
+    return res.status(403).json({
+      error: 'Cadastro ainda em análise.',
+      approval_status: req.driver.approval_status,
+      rejection_reason: req.driver.rejection_reason || null
+    });
+  }
+  next();
+}

@@ -88,8 +88,10 @@ async function ensureAppRole(migrationClient) {
 }
 
 // Inicialização do banco: aplica o schema (idempotente), garante a role de
-// runtime restrita, e roda os seeds de demonstração. Usa a role de migração
-// (superusuário) só aqui — nunca para servir requisições.
+// runtime restrita, e garante que sempre exista o Super Admin real (via
+// SUPER_ADMIN_EMAIL/PASSWORD). Sem seed de dados de demonstração — um banco
+// novo começa vazio, só com essa conta. Usa a role de migração (superusuário)
+// só aqui — nunca para servir requisições.
 export async function initDB() {
   // Todo o trabalho de inicialização (schema, criação de role, seeds, limpeza)
   // é feito com a role de migração (superusuário) — é trabalho de bootstrap
@@ -106,11 +108,6 @@ export async function initDB() {
     // Limpeza oportunista de sessões vencidas
     await client.query('DELETE FROM sessions WHERE expires_at < now()');
 
-    const { rows: driverCount } = await client.query('SELECT COUNT(*) as count FROM drivers');
-    if (Number(driverCount[0].count) === 0) {
-      await seedData(client);
-    }
-
     const { rows: superAdminCount } = await client.query("SELECT COUNT(*) as count FROM admins WHERE role = 'super_admin'");
     if (Number(superAdminCount[0].count) === 0) {
       await seedSuperAdmin(client);
@@ -122,11 +119,6 @@ export async function initDB() {
         "UPDATE admins SET email = $1, password_hash = $2, password_salt = $3 WHERE role = 'super_admin'",
         [process.env.SUPER_ADMIN_EMAIL, hash, salt]
       );
-    }
-
-    const { rows: adminCount } = await client.query("SELECT COUNT(*) as count FROM admins WHERE role = 'admin'");
-    if (Number(adminCount[0].count) === 0) {
-      await seedDemoAdmin(client);
     }
   } finally {
     client.release();
@@ -142,68 +134,4 @@ async function seedSuperAdmin(client) {
     INSERT INTO admins (name, email, password_hash, password_salt, company_name, role, invite_token, status, payment_status)
     VALUES ($1, $2, $3, $4, $5, 'super_admin', NULL, 'active', 'em_dia')
   `, ['Super Admin koren', email, hash, salt, null]);
-}
-
-async function seedDemoAdmin(client) {
-  const { hash, salt } = hashPassword('koren@2026');
-  const inviteToken = crypto.randomBytes(6).toString('base64url');
-  await client.query(`
-    INSERT INTO admins (name, email, password_hash, password_salt, company_name, role, invite_token, status, payment_status, monthly_fee)
-    VALUES ($1, $2, $3, $4, $5, 'admin', $6, 'active', 'em_dia', $7)
-  `, ['Admin Demo', 'admin@koren.app', hash, salt, 'koren Frotas Demo', inviteToken, 149.90]);
-}
-
-async function seedData(client) {
-  const { hash, salt } = hashPassword('koren@2026');
-
-  const { rows } = await client.query(`
-    INSERT INTO drivers (name, cpf, phone, email, password_hash, password_salt, address, status, rating, category, acceptance_rate, cancellation_rate, today_earnings, today_rides, today_hours, km_driven, fuel_efficiency, public_slug)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-    RETURNING id
-  `, [
-    'Sr. João Silva', '123.456.789-00', '(11) 98765-4321', 'joao.silva@koren.app', hash, salt,
-    'Av. Paulista, 1578, Apto 42 - Bela Vista, São Paulo - SP', 'online', 4.96, 'Diamante',
-    98.4, 0.8, 284.50, 8, '4h 30m', 86.5, 11.2, 'joaosilva'
-  ]);
-  const driverId = rows[0].id;
-
-  await client.query(`
-    INSERT INTO vehicles (driver_id, plate, model, year, color, fuel_type, is_active)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
-  `, [driverId, 'BRA2E19', 'Chevrolet Onix Plus Premier', 2023, 'Prata Metálico', 'Flex', true]);
-  await client.query(`
-    INSERT INTO vehicles (driver_id, plate, model, year, color, fuel_type, is_active)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
-  `, [driverId, 'ABC1D23', 'Toyota Corolla XEi 2.0', 2022, 'Preto Eclipse', 'Flex', false]);
-
-  await client.query(`
-    INSERT INTO driver_rates (driver_id, base_fare, km_rate, minute_rate, min_fare, pix_key)
-    VALUES ($1, $2, $3, $4, $5, $6)
-  `, [driverId, 6.50, 2.75, 0.45, 15.00, 'joao.silva@koren.app']);
-
-  const expenses = [
-    ['combustivel', 'Combustível', 165.00, 'Hoje, 09:30 • Posto Shell', 'Etanol 42L'],
-    ['pedagio', 'Pedágio Sem Parar', 18.20, 'Hoje, 11:45 • Rodoanel Trecho Sul', 'Pedágio km 48'],
-    ['lavagem', 'Lavagem Completa', 45.00, 'Ontem, 17:15 • Lava Rápido Estrela', 'Cera e higienização'],
-    ['manutencao', 'Troca de Óleo', 242.50, '02 de Set • Mecânica Brasil', 'Óleo 5W30 Sintético + Filtro'],
-    ['alimentacao', 'Almoço Executivo', 32.50, 'Hoje, 13:10 • Restaurante Sabor', 'Refeição']
-  ];
-  for (const [category, title, amount, date_time, notes] of expenses) {
-    await client.query(`
-      INSERT INTO expenses (driver_id, category, title, amount, date_time, notes)
-      VALUES ($1, $2, $3, $4, $5, $6)
-    `, [driverId, category, title, amount, date_time, notes]);
-  }
-
-  const rides = [
-    ['Mariana Alencar', '(11) 97123-8822', 'Aeroporto de Congonhas (Terminal 1)', 'Av. Faria Lima, 3477 - Itaim Bibi', 14.8, 28, 72.00, 'Hoje, 15:40'],
-    ['Carlos Mendonça', '(11) 98844-3311', 'Av. Paulista, 1578', 'Jardins (Rua Oscar Freire)', 4.2, 12, 28.00, 'Hoje, 14:15'],
-    ['Dra. Camila Torres', '(11) 99332-1100', 'Pinheiros (Estação Faria Lima)', 'Vila Madalena (Beco do Batman)', 6.8, 18, 48.50, 'Hoje, 12:50']
-  ];
-  for (const [passenger_name, passenger_phone, origin, destination, distance_km, duration_min, fare, date_time] of rides) {
-    await client.query(`
-      INSERT INTO rides (driver_id, passenger_name, passenger_phone, origin, destination, distance_km, duration_min, fare, status, date_time)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'completed', $9)
-    `, [driverId, passenger_name, passenger_phone, origin, destination, distance_km, duration_min, fare, date_time]);
-  }
 }

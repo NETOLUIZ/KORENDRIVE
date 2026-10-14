@@ -2,7 +2,8 @@ import { adminApi } from './admin-api.js';
 
 const state = {
   admin: null,
-  drivers: []
+  drivers: [],
+  selectedDriverId: null
 };
 
 window.handleLogin = handleLogin;
@@ -11,6 +12,10 @@ window.copyInviteLink = copyInviteLink;
 window.shareInviteLinkWhatsApp = shareInviteLinkWhatsApp;
 window.toggleDriverPermission = toggleDriverPermission;
 window.togglePasswordVisibility = togglePasswordVisibility;
+window.openDriverReviewModal = openDriverReviewModal;
+window.closeDriverReviewModal = closeDriverReviewModal;
+window.handleApproveDriverClick = handleApproveDriverClick;
+window.handleRejectDriverClick = handleRejectDriverClick;
 
 function togglePasswordVisibility(inputId, iconId) {
   const input = document.getElementById(inputId);
@@ -102,6 +107,16 @@ function statusBadge(status) {
   return `<span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${cls}">${isOnline ? 'Online' : 'Offline'}</span>`;
 }
 
+function approvalBadge(approvalStatus) {
+  const map = {
+    pending: { label: 'Pendente', cls: 'bg-amber-100 text-amber-700 border border-amber-300' },
+    approved: { label: 'Aprovado', cls: 'bg-brand/10 text-brand border border-brand/30' },
+    rejected: { label: 'Rejeitado', cls: 'bg-red-100 text-red-600 border border-red-300' }
+  };
+  const cfg = map[approvalStatus] || map.pending;
+  return `<span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${cfg.cls}">${cfg.label}</span>`;
+}
+
 function switchToggle(driverId, field, checked) {
   return `
     <label class="switch">
@@ -128,12 +143,18 @@ function renderDriversTable() {
   tbody.innerHTML = state.drivers.map(d => `
     <tr class="border-b border-surface-border/60">
       <td class="py-2.5 pr-3">
-        <p class="text-white font-semibold">${d.name}</p>
+        <p class="text-slate-900 font-semibold">${d.name}</p>
         <p class="text-[10px] text-slate-500">${d.phone || ''}</p>
       </td>
       <td class="py-2.5 pr-3">${statusBadge(d.status)}</td>
+      <td class="py-2.5 pr-3">${approvalBadge(d.approval_status)}</td>
       <td class="py-2.5 pr-3">${switchToggle(d.id, 'can_edit_rates', d.can_edit_rates === true)}</td>
       <td class="py-2.5 pr-3">${switchToggle(d.id, 'can_share_direct_link', d.can_share_direct_link === true)}</td>
+      <td class="py-2.5 pr-3">
+        <button onclick="openDriverReviewModal(${d.id})" class="text-brand font-semibold hover:underline">
+          ${d.approval_status === 'pending' ? 'Revisar' : 'Ver'}
+        </button>
+      </td>
     </tr>
   `).join('');
 }
@@ -147,6 +168,100 @@ async function toggleDriverPermission(driverId, field, value) {
   } else {
     showToast(res.error || 'Erro ao atualizar permissão.');
     await loadDrivers();
+  }
+}
+
+async function openDriverReviewModal(id) {
+  const res = await adminApi.getDriverDetail(id);
+  if (!res.ok || !res.driver) {
+    showToast(res.error || 'Erro ao carregar motorista.');
+    return;
+  }
+
+  state.selectedDriverId = id;
+  const d = res.driver;
+  const vehicle = (res.vehicles || []).find(v => v.is_active) || (res.vehicles || [])[0];
+
+  document.getElementById('review-driver-info').innerHTML = `
+    <p class="text-sm font-bold text-slate-900">${d.name}</p>
+    <p>${d.email}</p>
+    <p>${d.phone || ''}</p>
+    <p>${d.cpf || ''}</p>
+    <p>${d.address || ''}</p>
+  `;
+
+  document.getElementById('review-cnh-front').src = d.cnh_front || '';
+  document.getElementById('review-cnh-back').src = d.cnh_back || '';
+
+  const vehicleSection = document.getElementById('review-vehicle-section');
+  if (vehicle) {
+    vehicleSection.classList.remove('hidden');
+    document.getElementById('review-vehicle-info').textContent = `${vehicle.model} • ${vehicle.plate} • ${vehicle.color}`;
+    document.getElementById('review-vehicle-photo').src = vehicle.photo_url || '';
+    document.getElementById('review-vehicle-crlv').src = vehicle.crlv_url || '';
+  } else {
+    vehicleSection.classList.add('hidden');
+  }
+
+  const reasonBox = document.getElementById('review-reject-reason-box');
+  reasonBox.classList.add('hidden');
+  document.getElementById('review-reject-reason').value = '';
+  document.getElementById('btn-reject-driver').textContent = 'Rejeitar';
+
+  const isPending = d.approval_status === 'pending';
+  document.getElementById('review-actions').classList.toggle('hidden', !isPending);
+  document.getElementById('review-decided-msg').classList.toggle('hidden', isPending);
+
+  const modal = document.getElementById('modal-driver-review');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeDriverReviewModal() {
+  const modal = document.getElementById('modal-driver-review');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  state.selectedDriverId = null;
+}
+
+async function handleApproveDriverClick() {
+  if (!state.selectedDriverId) return;
+  const res = await adminApi.setDriverApproval(state.selectedDriverId, 'approve');
+  if (res.ok && res.success) {
+    showToast('Motorista aprovado!');
+    closeDriverReviewModal();
+    await loadDrivers();
+  } else {
+    showToast(res.error || 'Erro ao aprovar motorista.');
+  }
+}
+
+// Primeiro clique revela o campo de motivo; segundo clique confirma — evita
+// um motorista ser rejeitado sem motivo por engano de clique duplo.
+function handleRejectDriverClick() {
+  const box = document.getElementById('review-reject-reason-box');
+  if (box.classList.contains('hidden')) {
+    box.classList.remove('hidden');
+    document.getElementById('btn-reject-driver').textContent = 'Confirmar rejeição';
+    return;
+  }
+  confirmRejectDriver();
+}
+
+async function confirmRejectDriver() {
+  const reason = document.getElementById('review-reject-reason').value.trim();
+  if (!reason) {
+    showToast('Informe o motivo da rejeição.');
+    return;
+  }
+
+  const res = await adminApi.setDriverApproval(state.selectedDriverId, 'reject', reason);
+  if (res.ok && res.success) {
+    showToast('Motorista rejeitado.');
+    closeDriverReviewModal();
+    await loadDrivers();
+  } else {
+    showToast(res.error || 'Erro ao rejeitar motorista.');
   }
 }
 

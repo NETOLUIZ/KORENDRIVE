@@ -151,8 +151,10 @@
               <tr class="text-slate-400 border-b border-surface-border">
                 <th class="py-2 pr-3 font-medium">Motorista</th>
                 <th class="py-2 pr-3 font-medium">Status</th>
+                <th class="py-2 pr-3 font-medium">Cadastro</th>
                 <th class="py-2 pr-3 font-medium">Editar Tarifas</th>
                 <th class="py-2 pr-3 font-medium">Link Direto</th>
+                <th class="py-2 pr-3 font-medium"></th>
               </tr>
             </thead>
             <tbody id="drivers-table-body"></tbody>
@@ -163,6 +165,54 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- Modal de Revisão de Cadastro -->
+  <div id="modal-driver-review" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-surface-card border border-surface-border rounded-2xl w-full max-w-md p-5 space-y-4 fade-in max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <h3 class="font-display font-bold text-sm text-slate-900">Revisar Cadastro</h3>
+        <button onclick="closeDriverReviewModal()" class="w-7 h-7 rounded-lg bg-surface-subtle flex items-center justify-center text-slate-500 hover:text-slate-900">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+
+      <div id="review-driver-info" class="space-y-1 text-xs text-slate-600">
+        <!-- Preenchido via JS -->
+      </div>
+
+      <div>
+        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">CNH</p>
+        <div class="grid grid-cols-2 gap-2">
+          <img id="review-cnh-front" class="w-full h-24 object-cover rounded-lg border border-surface-border bg-surface-subtle">
+          <img id="review-cnh-back" class="w-full h-24 object-cover rounded-lg border border-surface-border bg-surface-subtle">
+        </div>
+      </div>
+
+      <div id="review-vehicle-section">
+        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Veículo</p>
+        <div id="review-vehicle-info" class="text-xs text-slate-600 mb-2"></div>
+        <div class="grid grid-cols-2 gap-2">
+          <img id="review-vehicle-photo" class="w-full h-24 object-cover rounded-lg border border-surface-border bg-surface-subtle">
+          <img id="review-vehicle-crlv" class="w-full h-24 object-cover rounded-lg border border-surface-border bg-surface-subtle">
+        </div>
+      </div>
+
+      <div id="review-reject-reason-box" class="hidden">
+        <label class="block text-xs font-medium text-slate-600 mb-1">Motivo da rejeição</label>
+        <textarea id="review-reject-reason" rows="2" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3 py-2 text-xs text-slate-900 outline-none"></textarea>
+      </div>
+
+      <div id="review-actions" class="grid grid-cols-2 gap-2 pt-1">
+        <button id="btn-reject-driver" onclick="handleRejectDriverClick()" class="py-2.5 rounded-xl border border-red-300 text-red-500 font-semibold text-xs hover:bg-red-50 transition">
+          Rejeitar
+        </button>
+        <button onclick="handleApproveDriverClick()" class="py-2.5 rounded-xl bg-brand hover:bg-brand-dark text-black font-bold text-xs transition">
+          Aprovar
+        </button>
+      </div>
+      <p id="review-decided-msg" class="hidden text-center text-xs text-slate-500 py-1">Este cadastro já foi avaliado.</p>
+    </div>
   </div>
 
   <!-- Toast -->

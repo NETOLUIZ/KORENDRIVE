@@ -72,6 +72,25 @@ ALTER TABLE drivers ALTER COLUMN today_hours SET DEFAULT '0h 00m';
 ALTER TABLE drivers ALTER COLUMN km_driven SET DEFAULT 0;
 ALTER TABLE drivers ALTER COLUMN fuel_efficiency DROP DEFAULT;
 
+-- Aprovação de motorista: todo cadastro novo nasce 'pending' e só ganha acesso
+-- ao Cockpit depois de aprovado — pelo admin da empresa (se admin_id setado) ou
+-- pelo super admin (se motorista independente). Backfill ANTES do DEFAULT: sem
+-- isso, motoristas já ativos (seed de demo + contas reais já em produção)
+-- virariam 'pending' retroativamente e perderiam acesso no próximo boot.
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS approval_status TEXT;
+UPDATE drivers SET approval_status = 'approved' WHERE approval_status IS NULL;
+ALTER TABLE drivers ALTER COLUMN approval_status SET DEFAULT 'pending';
+ALTER TABLE drivers ALTER COLUMN approval_status SET NOT NULL;
+
+DO $$ BEGIN
+  ALTER TABLE drivers ADD CONSTRAINT drivers_approval_status_check
+    CHECK (approval_status IN ('pending', 'approved', 'rejected'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
+
 CREATE TABLE IF NOT EXISTS vehicles (
   id SERIAL PRIMARY KEY,
   driver_id INTEGER NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
@@ -174,6 +193,12 @@ DROP POLICY IF EXISTS drivers_super_admin ON drivers;
 CREATE POLICY drivers_super_admin ON drivers FOR SELECT
   USING (current_setting('app.current_role', true) = 'super_admin');
 
+-- Super admin só tinha SELECT acima — sem isso, o UPDATE de aprovar/rejeitar
+-- motorista independente (sem admin_id) afetaria 0 linhas sob RLS.
+DROP POLICY IF EXISTS drivers_super_admin_update ON drivers;
+CREATE POLICY drivers_super_admin_update ON drivers FOR UPDATE
+  USING (current_setting('app.current_role', true) = 'super_admin');
+
 -- Ver nota em drivers_login_lookup: esse mesmo mecanismo de flag serve a tela
 -- pública de solicitação (/api/public/driver/:slug). Sem a flag, mesmo um
 -- motorista com o link compartilhável ligado não aparece pra ninguém — a
@@ -185,6 +210,7 @@ CREATE POLICY drivers_public_link ON drivers FOR SELECT
     current_setting('app.bypass_public_rls', true) = 'true'
     AND public_slug IS NOT NULL
     AND can_share_direct_link = true
+    AND approval_status = 'approved'
   );
 
 DROP POLICY IF EXISTS drivers_public_insert ON drivers;
@@ -202,11 +228,21 @@ DROP POLICY IF EXISTS vehicles_self ON vehicles;
 CREATE POLICY vehicles_self ON vehicles FOR ALL
   USING (driver_id = NULLIF(current_setting('app.current_driver_id', true), '')::int);
 
+-- vehicles não tinha NENHUMA política pra admin/super admin — sem isso, nenhum
+-- dos dois consegue ver foto do veículo/CRLV pra revisar documento no cadastro.
+DROP POLICY IF EXISTS vehicles_admin_scoped ON vehicles;
+CREATE POLICY vehicles_admin_scoped ON vehicles FOR SELECT
+  USING (driver_id IN (SELECT id FROM drivers WHERE admin_id = NULLIF(current_setting('app.current_admin_id', true), '')::int));
+
+DROP POLICY IF EXISTS vehicles_super_admin ON vehicles;
+CREATE POLICY vehicles_super_admin ON vehicles FOR SELECT
+  USING (current_setting('app.current_role', true) = 'super_admin');
+
 DROP POLICY IF EXISTS vehicles_public_link ON vehicles;
 CREATE POLICY vehicles_public_link ON vehicles FOR SELECT
   USING (
     current_setting('app.bypass_public_rls', true) = 'true'
-    AND driver_id IN (SELECT id FROM drivers WHERE public_slug IS NOT NULL AND can_share_direct_link = true)
+    AND driver_id IN (SELECT id FROM drivers WHERE public_slug IS NOT NULL AND can_share_direct_link = true AND approval_status = 'approved')
   );
 
 DROP POLICY IF EXISTS driver_rates_self ON driver_rates;
@@ -217,7 +253,7 @@ DROP POLICY IF EXISTS driver_rates_public_link ON driver_rates;
 CREATE POLICY driver_rates_public_link ON driver_rates FOR SELECT
   USING (
     current_setting('app.bypass_public_rls', true) = 'true'
-    AND driver_id IN (SELECT id FROM drivers WHERE public_slug IS NOT NULL AND can_share_direct_link = true)
+    AND driver_id IN (SELECT id FROM drivers WHERE public_slug IS NOT NULL AND can_share_direct_link = true AND approval_status = 'approved')
   );
 
 DROP POLICY IF EXISTS expenses_self ON expenses;

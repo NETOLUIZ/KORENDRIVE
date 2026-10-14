@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireDriver, publicDriver } from '../middleware/auth.js';
+import { requireDriver, requireApprovedDriver, publicDriver } from '../middleware/auth.js';
 import { withDbContext } from '../middleware/dbContext.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
@@ -26,7 +26,7 @@ router.get('/profile', requireDriver, withDbContext, asyncHandler(async (req, re
 }));
 
 // Alternar status Online / Offline
-router.post('/toggle-status', requireDriver, withDbContext, asyncHandler(async (req, res) => {
+router.post('/toggle-status', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
   const newStatus = req.driver.status === 'online' ? 'offline' : 'online';
   await req.db.query('UPDATE drivers SET status = $1 WHERE id = $2', [newStatus, req.driver.id]);
   res.json({ success: true, status: newStatus });

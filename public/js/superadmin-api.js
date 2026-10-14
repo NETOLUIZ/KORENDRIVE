@@ -80,6 +80,27 @@ export const superadminApi = {
     return { ok: res.ok, ...data };
   },
 
+  async listDrivers() {
+    const res = await authFetch('/drivers');
+    const data = await res.json();
+    return { ok: res.ok, ...data };
+  },
+
+  async getDriverDetail(driverId) {
+    const res = await authFetch(`/drivers/${driverId}`);
+    const data = await res.json();
+    return { ok: res.ok, ...data };
+  },
+
+  async setDriverApproval(driverId, action, reason) {
+    const res = await authFetch(`/drivers/${driverId}/approval`, {
+      method: 'PATCH',
+      body: JSON.stringify({ action, reason })
+    });
+    const data = await res.json();
+    return { ok: res.ok, ...data };
+  },
+
   async logout() {
     try { await authFetch('/logout', { method: 'POST' }); } catch (e) {}
     setToken(null);

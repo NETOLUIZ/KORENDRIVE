@@ -33,15 +33,82 @@ function addStop() {
   wrapper.id = `stop-row-${id}`;
   wrapper.className = 'flex items-end gap-2';
   wrapper.innerHTML = `
-    <div class="flex-1">
+    <div class="flex-1 relative">
       <label class="block text-xs font-medium text-slate-300 mb-1">Parada</label>
-      <input id="stop-input-${id}" type="text" placeholder="Ex: Rua Major Facundo, 200 - Centro, Fortaleza - CE" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+      <input id="stop-input-${id}" type="text" autocomplete="off" placeholder="Ex: Rua Major Facundo, 200 - Centro, Fortaleza - CE" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+      <div id="stop-suggestions-${id}" class="hidden absolute z-20 left-0 right-0 mt-1 bg-surface-card border border-surface-border rounded-xl overflow-hidden shadow-lg"></div>
     </div>
     <button type="button" onclick="removeStop(${id})" class="w-10 h-10 shrink-0 rounded-xl bg-surface-subtle border border-surface-border text-slate-400 hover:text-red-400 hover:border-red-500/40 flex items-center justify-center">
       <span class="material-symbols-outlined text-lg">close</span>
     </button>
   `;
   document.getElementById('booking-stops-list').appendChild(wrapper);
+  setupAddressAutocomplete(`stop-input-${id}`, `stop-suggestions-${id}`);
+}
+
+// Busca de endereço (OpenStreetMap/Nominatim, gratuito, sem chave de API —
+// mesmo padrão usado na busca de CEP do app do motorista) nos campos de
+// endereço desta tela pública de solicitação de corrida.
+function setupAddressAutocomplete(inputId, suggestionsId) {
+  const input = document.getElementById(inputId);
+  const box = document.getElementById(suggestionsId);
+  if (!input || !box) return;
+
+  let debounceTimer = null;
+  let currentController = null;
+
+  function hideSuggestions() {
+    box.classList.add('hidden');
+    box.innerHTML = '';
+  }
+
+  async function search(query) {
+    if (currentController) currentController.abort();
+    currentController = new AbortController();
+
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=5&countrycodes=br&q=${encodeURIComponent(query)}`;
+      const res = await fetch(url, { signal: currentController.signal });
+      const results = await res.json();
+
+      if (!results.length) {
+        hideSuggestions();
+        return;
+      }
+
+      box.innerHTML = results.map((r, i) => `
+        <button type="button" data-idx="${i}" class="w-full text-left px-3 py-2 text-xs text-slate-200 hover:bg-surface-subtle border-b border-surface-border last:border-b-0 flex items-start gap-2">
+          <span class="material-symbols-outlined text-brand text-sm mt-0.5 shrink-0">location_on</span>
+          <span class="truncate">${r.display_name}</span>
+        </button>
+      `).join('');
+
+      box.querySelectorAll('button[data-idx]').forEach(btn => {
+        btn.onclick = () => {
+          input.value = results[Number(btn.dataset.idx)].display_name;
+          hideSuggestions();
+        };
+      });
+
+      box.classList.remove('hidden');
+    } catch (err) {
+      if (err.name !== 'AbortError') console.error('Erro na busca de endereço:', err);
+    }
+  }
+
+  input.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    const query = input.value.trim();
+    if (query.length < 3) {
+      hideSuggestions();
+      return;
+    }
+    debounceTimer = setTimeout(() => search(query), 450);
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(hideSuggestions, 150);
+  });
 }
 
 function removeStop(id) {
@@ -55,6 +122,9 @@ function getStops() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  setupAddressAutocomplete('booking-origin', 'booking-origin-suggestions');
+  setupAddressAutocomplete('booking-destination', 'booking-destination-suggestions');
+
   const parts = location.pathname.split('/p/');
   state.slug = parts[1] ? decodeURIComponent(parts[1]) : null;
 

@@ -127,10 +127,11 @@
           <input id="booking-phone" type="text" required placeholder="(11) 91234-5678" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
         </div>
 
-        <div>
+        <div class="relative">
           <label class="block text-xs font-medium text-slate-300 mb-1">Origem</label>
-          <input id="booking-origin" type="text" required placeholder="Ex: Rua Silva Paulet, 100 - Aldeota, Fortaleza - CE" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
-          <p class="text-[10px] text-slate-500 mt-1">Use o formato: Rua, Número - Bairro, Cidade - UF (assim o Maps encontra certinho)</p>
+          <input id="booking-origin" type="text" required autocomplete="off" placeholder="Ex: Rua Silva Paulet, 100 - Aldeota, Fortaleza - CE" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+          <div id="booking-origin-suggestions" class="hidden absolute z-20 left-0 right-0 mt-1 bg-surface-card border border-surface-border rounded-xl overflow-hidden shadow-lg"></div>
+          <p class="text-[10px] text-slate-500 mt-1">Comece a digitar e escolha um endereço na lista de sugestões.</p>
         </div>
 
         <!-- Paradas intermediárias (adicionadas dinamicamente) -->
@@ -141,10 +142,11 @@
           Adicionar Parada
         </button>
 
-        <div>
+        <div class="relative">
           <label class="block text-xs font-medium text-slate-300 mb-1">Destino</label>
-          <input id="booking-destination" type="text" required placeholder="Ex: Av. Beira Mar, 500 - Meireles, Fortaleza - CE" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
-          <p class="text-[10px] text-slate-500 mt-1">Use o formato: Rua, Número - Bairro, Cidade - UF (assim o Maps encontra certinho)</p>
+          <input id="booking-destination" type="text" required autocomplete="off" placeholder="Ex: Av. Beira Mar, 500 - Meireles, Fortaleza - CE" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+          <div id="booking-destination-suggestions" class="hidden absolute z-20 left-0 right-0 mt-1 bg-surface-card border border-surface-border rounded-xl overflow-hidden shadow-lg"></div>
+          <p class="text-[10px] text-slate-500 mt-1">Comece a digitar e escolha um endereço na lista de sugestões.</p>
         </div>
 
         <div class="grid grid-cols-2 gap-3">

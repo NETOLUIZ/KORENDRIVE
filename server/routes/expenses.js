@@ -1,12 +1,12 @@
 import express from 'express';
-import { requireDriver } from '../middleware/auth.js';
+import { requireDriver, requireApprovedDriver } from '../middleware/auth.js';
 import { withDbContext } from '../middleware/dbContext.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = express.Router();
 
 // Obter resumo de custos e histórico de despesas do motorista autenticado
-router.get('/', requireDriver, withDbContext, asyncHandler(async (req, res) => {
+router.get('/', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
   const { rows: expenses } = await req.db.query(
     'SELECT * FROM expenses WHERE driver_id = $1 ORDER BY id DESC',
     [req.driver.id]
@@ -29,7 +29,7 @@ router.get('/', requireDriver, withDbContext, asyncHandler(async (req, res) => {
 }));
 
 // Cadastrar nova despesa
-router.post('/', requireDriver, withDbContext, asyncHandler(async (req, res) => {
+router.post('/', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
   const { category, title, amount, date_time, notes } = req.body;
 
   if (!category || !amount) {
