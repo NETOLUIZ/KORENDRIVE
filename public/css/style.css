@@ -1,14 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 :root {
-  --color-brand: #00e575;
-  --color-brand-dark: #00b85c;
-  --color-brand-dim: rgba(0, 229, 117, 0.12);
-  --color-brand-glow: rgba(0, 229, 117, 0.25);
-  --bg-main: #0a0f14;
-  --bg-card: #131920;
-  --bg-card-subtle: #182029;
-  --border-card: #212a35;
+  --color-brand: #4FB885;
+  --color-brand-dark: #3B9167;
+  --color-brand-light: #7CCA8D;
+  --color-brand-dim: rgba(79, 184, 133, 0.12);
+  --color-brand-glow: rgba(79, 184, 133, 0.25);
+  --color-accent: #DF6A46;
+  --color-accent-dark: #C34822;
+  --color-highlight: #DCF20F;
+  --bg-main: #241F21;
+  --bg-card: #373034;
+  --bg-card-subtle: #483D43;
+  --border-card: #5E5058;
   --text-main: #f3f4f6;
   --text-muted: #94a3b8;
 }
@@ -21,7 +25,7 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Uber Move Text', 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   background-color: var(--bg-main);
   color: var(--text-main);
   min-height: 100vh;
@@ -29,7 +33,7 @@ body {
 }
 
 h1, h2, h3, h4, .font-display {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Uber Move', 'Inter', sans-serif;
 }
 
 /* Custom Scrollbar */
@@ -38,10 +42,10 @@ h1, h2, h3, h4, .font-display {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0f14;
+  background: var(--bg-main);
 }
 ::-webkit-scrollbar-thumb {
-  background: #25313d;
+  background: var(--bg-card-subtle);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -50,32 +54,32 @@ h1, h2, h3, h4, .font-display {
 
 /* Glass & Neon Effects */
 .glass-panel {
-  background: rgba(19, 25, 32, 0.85);
+  background: rgba(55, 48, 52, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .glow-brand {
-  box-shadow: 0 0 24px rgba(0, 229, 117, 0.25);
+  box-shadow: 0 0 24px rgba(79, 184, 133, 0.25);
 }
 
 .glow-brand-sm {
-  box-shadow: 0 0 12px rgba(0, 229, 117, 0.18);
+  box-shadow: 0 0 12px rgba(79, 184, 133, 0.18);
 }
 
 .border-glow:focus, .border-glow:focus-within {
-  border-color: #00e575;
-  box-shadow: 0 0 0 2px rgba(0, 229, 117, 0.2);
+  border-color: #4FB885;
+  box-shadow: 0 0 0 2px rgba(79, 184, 133, 0.2);
 }
 
 /* Pulse animation for online indicator */
 @keyframes pulseGlow {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(0, 229, 117, 0.7);
+    box-shadow: 0 0 0 0 rgba(79, 184, 133, 0.7);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(0, 229, 117, 0);
+    box-shadow: 0 0 0 8px rgba(79, 184, 133, 0);
   }
 }
 
@@ -111,7 +115,7 @@ h1, h2, h3, h4, .font-display {
   padding: 4px 8px;
   text-align: center;
   color: #111827;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Uber Move', 'Inter', sans-serif;
   font-weight: 800;
   font-size: 24px;
   letter-spacing: 3px;
@@ -136,7 +140,7 @@ h1, h2, h3, h4, .font-display {
   position: absolute;
   cursor: pointer;
   top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #2a3441;
+  background-color: var(--bg-card-subtle);
   transition: .3s;
   border-radius: 34px;
 }
@@ -154,7 +158,7 @@ h1, h2, h3, h4, .font-display {
 }
 
 input:checked + .slider {
-  background-color: #00e575;
+  background-color: #4FB885;
 }
 
 input:checked + .slider:before {
@@ -163,7 +167,7 @@ input:checked + .slider:before {
 
 /* Bottom Bar */
 .bottom-dock {
-  background: rgba(13, 18, 24, 0.95);
+  background: rgba(36, 31, 33, 0.95);
   backdrop-filter: blur(16px);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }

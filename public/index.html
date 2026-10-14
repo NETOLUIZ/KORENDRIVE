@@ -11,7 +11,7 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <!-- Google Material Symbols -->
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
@@ -24,21 +24,30 @@
         extend: {
           colors: {
             brand: {
-              DEFAULT: '#00e575',
-              dark: '#00b85c',
-              dim: 'rgba(0, 229, 117, 0.12)',
-              glow: 'rgba(0, 229, 117, 0.25)'
+              DEFAULT: '#4FB885',
+              dark: '#3B9167',
+              light: '#7CCA8D',
+              dim: 'rgba(79, 184, 133, 0.12)',
+              glow: 'rgba(79, 184, 133, 0.25)'
+            },
+            accent: {
+              DEFAULT: '#DF6A46',
+              dark: '#C34822',
+              dim: 'rgba(223, 106, 70, 0.12)'
+            },
+            highlight: {
+              DEFAULT: '#DCF20F'
             },
             surface: {
-              main: '#0a0f14',
-              card: '#131920',
-              subtle: '#182029',
-              border: '#212a35'
+              main: '#241F21',
+              card: '#373034',
+              subtle: '#483D43',
+              border: '#5E5058'
             }
           },
           fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            display: ['Space Grotesk', 'sans-serif']
+            sans: ['"Uber Move Text"', 'Inter', '-apple-system', 'BlinkMacSystemFont', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+            display: ['"Uber Move"', 'Inter', 'sans-serif']
           }
         }
       }
@@ -47,10 +56,10 @@
 
   <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="bg-[#0a0f14] text-slate-100 min-h-screen flex flex-col items-center justify-start pb-20 selection:bg-brand selection:text-black">
+<body class="bg-surface-main text-slate-100 min-h-screen flex flex-col items-center justify-start pb-20 selection:bg-brand selection:text-black">
 
   <!-- TOP BAR -->
-  <header class="w-full bg-[#0f141a]/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-50 px-3 py-2 flex items-center justify-start">
+  <header class="w-full bg-[#19151a]/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-50 px-3 py-2 flex items-center justify-start">
     <!-- Brand Mini Logo -->
     <div class="flex items-center gap-2 cursor-pointer" onclick="navigateTo('cockpit')">
       <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-dark to-brand flex items-center justify-center shadow-lg shadow-brand/20">
@@ -71,7 +80,7 @@
       <div class="flex flex-col items-center text-center my-6">
         <!-- Logo Grande korenDriver -->
         <div class="relative mb-3 flex items-center justify-center">
-          <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand/20 via-surface-card to-[#0d131a] border border-brand/40 flex items-center justify-center glow-brand">
+          <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand/20 via-surface-card to-[#191519] border border-brand/40 flex items-center justify-center glow-brand">
             <span class="material-symbols-outlined text-brand text-5xl">electric_car</span>
           </div>
         </div>
@@ -128,7 +137,7 @@
 
         <div class="relative my-6 text-center">
           <hr class="border-surface-border">
-          <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0a0f14] px-3 text-[10px] uppercase font-mono tracking-widest text-slate-500">Ou acesse com</span>
+          <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-main px-3 text-[10px] uppercase font-mono tracking-widest text-slate-500">Ou acesse com</span>
         </div>
 
         <!-- Biometria / Face ID -->
@@ -177,49 +186,51 @@
       </div>
 
       <form id="form-register-step1" onsubmit="handleRegisterStep1(event)" class="space-y-3.5">
+        <div id="register-step1-error" class="hidden p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400 flex items-start gap-2"></div>
+
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1">Nome Completo</label>
-          <input id="reg-name" type="text" required value="João Severo da Silva" placeholder="Seu nome completo" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+          <input id="reg-name" type="text" required placeholder="Ex: Carlos Eduardo de Oliveira" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-medium text-slate-300 mb-1">CPF</label>
-            <input id="reg-cpf" type="text" required value="123.456.789-10" placeholder="000.000.000-00" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+            <input id="reg-cpf" type="text" required placeholder="000.000.000-00" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-300 mb-1">WhatsApp</label>
-            <input id="reg-phone" type="tel" required value="(11) 98765-4321" placeholder="(11) 99999-9999" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+            <input id="reg-phone" type="tel" required placeholder="(11) 99999-9999" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
           </div>
         </div>
 
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1">E-mail</label>
-          <input id="reg-email" type="email" required value="joao.silva@koren.app" placeholder="exemplo@email.com" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+          <input id="reg-email" type="email" required placeholder="seuemail@exemplo.com" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
         </div>
 
         <div class="space-y-3">
           <div>
             <label class="block text-xs font-medium text-slate-300 mb-1">Endereço Residencial</label>
             <div class="relative">
-              <input id="reg-cep" type="text" inputmode="numeric" maxlength="9" value="01310-200" placeholder="CEP (ex: 01310-200)" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+              <input id="reg-cep" type="text" inputmode="numeric" maxlength="9" placeholder="CEP (ex: 01310-200)" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
               <span id="cep-status" class="hidden absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-brand"></span>
             </div>
             <p id="cep-error" class="hidden text-[10px] text-red-400 mt-1">CEP não encontrado. Preencha os dados manualmente.</p>
           </div>
 
           <div>
-            <input id="reg-street" type="text" value="Av. Paulista" placeholder="Rua / Avenida" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+            <input id="reg-street" type="text" placeholder="Rua / Avenida" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
           </div>
 
           <div class="grid grid-cols-3 gap-2">
-            <input id="reg-number" type="text" value="1578" placeholder="Número" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
-            <input id="reg-neighborhood" type="text" value="Bela Vista" placeholder="Bairro" class="col-span-2 w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+            <input id="reg-number" type="text" placeholder="Número" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+            <input id="reg-neighborhood" type="text" placeholder="Bairro" class="col-span-2 w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
           </div>
 
           <div class="grid grid-cols-3 gap-2">
-            <input id="reg-city" type="text" value="São Paulo" placeholder="Cidade" class="col-span-2 w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
-            <input id="reg-state" type="text" maxlength="2" value="SP" placeholder="UF" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none uppercase text-center">
+            <input id="reg-city" type="text" placeholder="Cidade" class="col-span-2 w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
+            <input id="reg-state" type="text" maxlength="2" placeholder="UF" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none uppercase text-center">
           </div>
         </div>
 
@@ -260,7 +271,7 @@
         <!-- Senha e Confirmação -->
         <div class="pt-2">
           <label class="block text-xs font-medium text-slate-300 mb-1">Criar Senha de Acesso</label>
-          <input id="reg-pwd" type="password" required value="senhaForte123@" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          <input id="reg-pwd" type="password" required placeholder="Digite uma senha segura" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
           <!-- Medidor de força da senha -->
           <div class="flex items-center gap-1 mt-1.5">
             <div class="flex-1 h-1 rounded-full bg-brand"></div>
@@ -272,13 +283,13 @@
         </div>
 
         <div class="pt-1">
-          <label class="flex items-start gap-2 cursor-pointer text-xs text-slate-400">
+          <label class="flex items-start gap-2 cursor-pointer text-xs text-slate-400 bg-surface-card/60 p-2.5 rounded-xl border border-surface-border">
             <input id="reg-terms-accept" type="checkbox" required class="mt-0.5 rounded border-slate-700 bg-surface-card text-brand focus:ring-brand">
             <span>Declaro que li e aceito os <a href="/termos-de-uso.html" target="_blank" class="text-brand hover:underline">Termos de Uso</a> e a <a href="/politica-de-privacidade.html" target="_blank" class="text-brand hover:underline">Política de Privacidade</a> da koren.</span>
           </label>
         </div>
 
-        <button type="submit" class="w-full py-3.5 mt-4 rounded-xl bg-brand hover:bg-brand-dark text-black font-display font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand/20 transition">
+        <button id="btn-submit-step1" type="submit" class="w-full py-3.5 mt-4 rounded-xl bg-brand hover:bg-brand-dark text-black font-display font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand/20 transition">
           Avançar para Veículo
           <span class="material-symbols-outlined text-lg">arrow_forward</span>
         </button>
@@ -300,6 +311,8 @@
       </div>
 
       <form id="form-register-step2" onsubmit="handleRegisterStep2(event)" class="space-y-4">
+        <div id="register-step2-error" class="hidden p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400 flex items-start gap-2"></div>
+
         <!-- Placa Mercosul Card -->
         <div class="bg-surface-card p-4 rounded-xl border border-surface-border flex flex-col items-center">
           <label class="text-xs text-slate-400 mb-2">Placa do Veículo (Padrão Mercosul)</label>
@@ -309,25 +322,25 @@
               <span class="text-[8px]">MERCOSUL</span>
             </div>
             <div class="plate-body">
-              <input id="reg-veh-plate" type="text" value="BRA2E19" maxlength="7" class="bg-transparent text-center font-extrabold uppercase outline-none w-full text-slate-900 tracking-wider">
+              <input id="reg-veh-plate" type="text" placeholder="ABC1D23" maxlength="7" class="bg-transparent text-center font-extrabold uppercase outline-none w-full text-slate-900 tracking-wider">
             </div>
           </div>
-          <span class="text-[10px] text-slate-500">Toque na placa para alterar o código</span>
+          <span class="text-[10px] text-slate-500">Toque na placa para digitar o código</span>
         </div>
 
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1">Modelo / Marca</label>
-          <input id="reg-veh-model" type="text" required value="Chevrolet Onix Plus Premier" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+          <input id="reg-veh-model" type="text" required placeholder="Ex: Chevrolet Onix Plus Premier" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-medium text-slate-300 mb-1">Ano Fabricação</label>
-            <input id="reg-veh-year" type="number" required value="2023" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+            <input id="reg-veh-year" type="number" required placeholder="Ex: 2024" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-300 mb-1">Cor</label>
-            <input id="reg-veh-color" type="text" required value="Prata Metálico" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white outline-none">
+            <input id="reg-veh-color" type="text" required placeholder="Ex: Prata" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
           </div>
         </div>
 
@@ -345,8 +358,8 @@
         <!-- Foto do Veículo Preview -->
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1.5">Foto do Automóvel</label>
-          <div onclick="document.getElementById('vehicle-photo-input').click()" class="h-36 rounded-xl bg-gradient-to-tr from-[#131d27] to-[#1c2937] border border-surface-border relative overflow-hidden flex flex-col items-center justify-center text-center p-3 cursor-pointer hover:border-brand/40 transition">
-            <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#00e575_1px,transparent_1px)] [background-size:16px_16px]"></div>
+          <div onclick="document.getElementById('vehicle-photo-input').click()" class="h-36 rounded-xl bg-gradient-to-tr from-[#2a2427] to-[#3a3338] border border-surface-border relative overflow-hidden flex flex-col items-center justify-center text-center p-3 cursor-pointer hover:border-brand/40 transition">
+            <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#4fb885_1px,transparent_1px)] [background-size:16px_16px]"></div>
             <img id="vehicle-photo-preview" class="hidden absolute inset-0 w-full h-full object-cover z-10">
             <div id="vehicle-photo-placeholder" class="relative z-20 flex flex-col items-center">
               <span class="material-symbols-outlined text-4xl text-brand mb-1">add_a_photo</span>
@@ -385,7 +398,7 @@
           </p>
         </div>
 
-        <button type="submit" class="w-full py-3.5 rounded-xl bg-brand hover:bg-brand-dark text-black font-display font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand/20 transition">
+        <button id="btn-submit-step2" type="submit" class="w-full py-3.5 rounded-xl bg-brand hover:bg-brand-dark text-black font-display font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand/20 transition">
           <span class="material-symbols-outlined text-lg">check</span>
           Concluir e Enviar para Análise
         </button>
@@ -420,7 +433,7 @@
       </div>
 
       <!-- Cockpit Telemetria / Velocímetro Digital & Autonomia -->
-      <div class="bg-gradient-to-b from-[#151d27] to-[#0f141c] p-4 rounded-2xl border border-surface-border relative overflow-hidden">
+      <div class="bg-gradient-to-b from-[#2a2427] to-[#19151a] p-4 rounded-2xl border border-surface-border relative overflow-hidden">
         <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
           <span class="flex items-center gap-1 text-brand font-medium">
             <span class="material-symbols-outlined text-sm">my_location</span> GPS Conectado
@@ -495,7 +508,7 @@
         </div>
 
         <!-- Mapa real (Google Maps) com overlay de demanda -->
-        <div class="relative h-40 rounded-xl bg-[#091219] overflow-hidden border border-slate-800">
+        <div class="relative h-40 rounded-xl bg-[#120f10] overflow-hidden border border-slate-800">
           <iframe
             id="demand-map-frame"
             class="w-full h-full"
@@ -552,7 +565,7 @@
       </div>
 
       <!-- Card Principal: Total do Mês e Lucro Líquido -->
-      <div class="bg-gradient-to-br from-surface-card to-[#121c27] p-4 rounded-2xl border border-surface-border">
+      <div class="bg-gradient-to-br from-surface-card to-[#2a2427] p-4 rounded-2xl border border-surface-border">
         <span class="text-xs text-slate-400 font-medium">Total de Custos do Mês</span>
         <div class="flex items-baseline gap-2 mb-3">
           <span id="costs-total" class="text-3xl font-display font-black text-white">R$ 842,50</span>
@@ -611,7 +624,7 @@
       </div>
 
       <!-- Link Direto WhatsApp Particular -->
-      <div id="direct-link-card" class="bg-gradient-to-r from-surface-card to-[#121c27] p-4 rounded-2xl border border-surface-border space-y-3">
+      <div id="direct-link-card" class="bg-gradient-to-r from-surface-card to-[#2a2427] p-4 rounded-2xl border border-surface-border space-y-3">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-white flex items-center gap-1.5">
             <span class="material-symbols-outlined text-brand text-base">link</span>

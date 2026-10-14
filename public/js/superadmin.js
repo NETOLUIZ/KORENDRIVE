@@ -411,12 +411,12 @@ function trendLabel(current, previous, { isCurrency } = {}) {
   const fmt = v => isCurrency ? formatBRL(v) : v;
   if (previous === 0) {
     return current > 0
-      ? `<span style="color:#00e676">+${fmt(current)}</span> novos este mês`
+      ? `<span style="color:#4FB885">+${fmt(current)}</span> novos este mês`
       : `Sem novos cadastros este mês`;
   }
   const pct = ((current - previous) / previous) * 100;
   const positive = pct >= 0;
-  const color = positive ? '#00e676' : '#ef4444';
+  const color = positive ? '#4FB885' : '#DF6A46';
   const arrow = positive ? '↑' : '↓';
   return `<span style="color:${color}">${arrow} ${Math.abs(pct).toFixed(1)}%</span> vs. mês anterior`;
 }
@@ -525,27 +525,27 @@ function renderRevenueChart() {
   const baseline = padT + plotH;
   const gridLines = [0.25, 0.5, 0.75, 1].map(f => {
     const gy = padT + plotH * (1 - f);
-    return `<line x1="${padL}" y1="${gy}" x2="${W - padR}" y2="${gy}" stroke="#1c2229" stroke-width="1" />`;
+    return `<line x1="${padL}" y1="${gy}" x2="${W - padR}" y2="${gy}" stroke="#2e282c" stroke-width="1" />`;
   }).join('');
 
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.innerHTML = `
     <defs>
       <linearGradient id="gradReceived" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#00e676" stop-opacity="0.28" />
-        <stop offset="100%" stop-color="#00e676" stop-opacity="0.02" />
+        <stop offset="0%" stop-color="#4FB885" stop-opacity="0.28" />
+        <stop offset="100%" stop-color="#4FB885" stop-opacity="0.02" />
       </linearGradient>
       <linearGradient id="gradOverdue" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#ef4444" stop-opacity="0.28" />
-        <stop offset="100%" stop-color="#ef4444" stop-opacity="0.02" />
+        <stop offset="0%" stop-color="#DF6A46" stop-opacity="0.28" />
+        <stop offset="100%" stop-color="#DF6A46" stop-opacity="0.02" />
       </linearGradient>
     </defs>
     ${gridLines}
     <path d="${areaPath(totalPoints, baseline)}" fill="url(#gradOverdue)" />
     <path d="${areaPath(receivedPoints, baseline)}" fill="url(#gradReceived)" />
-    <path d="${linePath(totalPoints)}" fill="none" stroke="#ef4444" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
-    <path d="${linePath(receivedPoints)}" fill="none" stroke="#00e676" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
-    ${series.map((s, i) => `<circle cx="${x(i)}" cy="${yFor(s.received)}" r="3" fill="#0c0f12" stroke="#00e676" stroke-width="2" />`).join('')}
+    <path d="${linePath(totalPoints)}" fill="none" stroke="#DF6A46" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+    <path d="${linePath(receivedPoints)}" fill="none" stroke="#4FB885" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+    ${series.map((s, i) => `<circle cx="${x(i)}" cy="${yFor(s.received)}" r="3" fill="#191517" stroke="#4FB885" stroke-width="2" />`).join('')}
     ${series.length <= 14 ? series.map((s, i) => `<text x="${x(i)}" y="${H - 6}" font-size="10" fill="#8b949e" text-anchor="middle">${s.label}</text>`).join('') : ''}
   `;
 
@@ -575,8 +575,8 @@ function attachChartHover(svg, series, xFn, padT, plotH) {
     tooltip.style.opacity = '1';
     tooltip.innerHTML = `
       <div class="font-semibold text-satext1 mb-1">${s.label}</div>
-      <div style="color:#00e676">● Recebido: ${formatBRL(s.received)}</div>
-      <div style="color:#ef4444">● Em atraso: ${formatBRL(s.overdue)}</div>
+      <div style="color:#4FB885">● Recebido: ${formatBRL(s.received)}</div>
+      <div style="color:#DF6A46">● Em atraso: ${formatBRL(s.overdue)}</div>
     `;
   };
   wrap.onmouseleave = () => { tooltip.style.opacity = '0'; };
@@ -601,9 +601,9 @@ function renderSubscriptionDonut() {
   const circumference = 2 * Math.PI * r;
 
   const segments = [
-    { value: active, color: '#00e676' },
-    { value: overdue, color: '#ef4444' },
-    { value: blocked, color: '#3a3f47' }
+    { value: active, color: '#4FB885' },
+    { value: overdue, color: '#DF6A46' },
+    { value: blocked, color: '#5E5058' }
   ];
 
   let offset = 0;
@@ -618,13 +618,13 @@ function renderSubscriptionDonut() {
   }).join('');
 
   svg.innerHTML = total === 0
-    ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1c2229" stroke-width="${sw}" />`
+    ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#2e282c" stroke-width="${sw}" />`
     : circles;
 
   const legendItems = [
-    { label: 'Ativas', value: active, color: '#00e676' },
-    { label: 'Em atraso', value: overdue, color: '#ef4444' },
-    { label: 'Bloqueadas', value: blocked, color: '#3a3f47' }
+    { label: 'Ativas', value: active, color: '#4FB885' },
+    { label: 'Em atraso', value: overdue, color: '#DF6A46' },
+    { label: 'Bloqueadas', value: blocked, color: '#5E5058' }
   ];
 
   document.getElementById('donut-legend').innerHTML = legendItems.map(item => `

@@ -7,19 +7,27 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: { extend: {
-        colors: { brand: { DEFAULT: '#00e575', dark: '#00b85c' }, surface: { main: '#0a0f14', card: '#131920', border: '#212a35' } },
-        fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Space Grotesk', 'sans-serif'] }
+        colors: {
+          brand: { DEFAULT: '#4FB885', dark: '#3B9167', light: '#7CCA8D' },
+          accent: { DEFAULT: '#DF6A46', dark: '#C34822' },
+          highlight: { DEFAULT: '#DCF20F' },
+          surface: { main: '#241F21', card: '#373034', subtle: '#483D43', border: '#5E5058' }
+        },
+        fontFamily: {
+          sans: ['"Uber Move Text"', 'Inter', '-apple-system', 'BlinkMacSystemFont', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+          display: ['"Uber Move"', 'Inter', 'sans-serif']
+        }
       }}
     }
   </script>
   <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="bg-[#0a0f14] text-slate-200 min-h-screen">
+<body class="bg-surface-main text-slate-200 min-h-screen">
   <main class="max-w-2xl mx-auto px-5 py-10">
     <a href="/" class="text-brand text-xs font-semibold hover:underline">&larr; Voltar pro koren</a>
 

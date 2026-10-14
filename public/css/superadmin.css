@@ -1,21 +1,21 @@
 /* Design system exclusivo do painel Super Admin — não compartilhado com o app do motorista nem com o painel do Admin */
 
 :root {
-  --sa-bg-0: #09090b;
-  --sa-bg-1: #0c0f12;
-  --sa-bg-2: #11161b;
-  --sa-card: #12181e;
+  --sa-bg-0: #141012;
+  --sa-bg-1: #191517;
+  --sa-bg-2: #1e1a1c;
+  --sa-card: #292427;
   --sa-border: rgba(255, 255, 255, 0.08);
   --sa-text-1: #f5f7f8;
   --sa-text-2: #8b949e;
-  --sa-green: #00e676;
-  --sa-green-2: #00c853;
-  --sa-red: #ef4444;
-  --sa-yellow: #f59e0b;
+  --sa-green: #4FB885;
+  --sa-green-2: #3B9167;
+  --sa-red: #DF6A46;
+  --sa-yellow: #DCF20F;
 }
 
 .sa-root {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Uber Move Text', 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   background: var(--sa-bg-0);
   color: var(--sa-text-1);
 }
@@ -56,7 +56,7 @@
 }
 .sa-nav-item:hover { background: rgba(255,255,255,0.04); color: var(--sa-text-1); }
 .sa-nav-item.active {
-  background: rgba(0, 230, 118, 0.08);
+  background: rgba(79, 184, 133, 0.08);
   color: var(--sa-text-1);
 }
 .sa-nav-item.active::before {
@@ -135,12 +135,12 @@
 .sa-btn-secondary:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.16); }
 
 .sa-btn-danger {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(223, 106, 70, 0.1);
+  border: 1px solid rgba(223, 106, 70, 0.3);
   color: var(--sa-red);
   transition: background 0.15s ease;
 }
-.sa-btn-danger:hover { background: rgba(239, 68, 68, 0.18); }
+.sa-btn-danger:hover { background: rgba(223, 106, 70, 0.18); }
 
 /* Badges */
 .sa-badge {
@@ -153,8 +153,8 @@
   border-radius: 999px;
   line-height: 1.4;
 }
-.sa-badge-green { background: rgba(0, 230, 118, 0.12); color: var(--sa-green); border: 1px solid rgba(0, 230, 118, 0.28); }
-.sa-badge-red { background: rgba(239, 68, 68, 0.12); color: var(--sa-red); border: 1px solid rgba(239, 68, 68, 0.28); }
+.sa-badge-green { background: rgba(79, 184, 133, 0.12); color: var(--sa-green); border: 1px solid rgba(79, 184, 133, 0.28); }
+.sa-badge-red { background: rgba(223, 106, 70, 0.12); color: var(--sa-red); border: 1px solid rgba(223, 106, 70, 0.28); }
 .sa-badge-yellow { background: rgba(245, 158, 11, 0.12); color: var(--sa-yellow); border: 1px solid rgba(245, 158, 11, 0.28); }
 .sa-badge-gray { background: rgba(255, 255, 255, 0.06); color: var(--sa-text-2); border: 1px solid var(--sa-border); }
 
@@ -191,7 +191,7 @@
   display: flex; align-items: center; justify-content: center;
   font-size: 12px;
   font-weight: 700;
-  background: rgba(0, 230, 118, 0.12);
+  background: rgba(79, 184, 133, 0.12);
   color: var(--sa-green);
   flex-shrink: 0;
 }
@@ -200,7 +200,7 @@
 .sa-chart-tooltip {
   position: absolute;
   pointer-events: none;
-  background: #191f26;
+  background: #241f21;
   border: 1px solid var(--sa-border);
   border-radius: 8px;
   padding: 8px 10px;
@@ -227,7 +227,7 @@
 
 /* Dropdown */
 .sa-dropdown {
-  background: #171d24;
+  background: #1e1a1c;
   border: 1px solid var(--sa-border);
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.45);
