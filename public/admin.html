@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="dark" lang="pt-BR">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
@@ -11,7 +11,7 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <!-- Google Material Symbols -->
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
@@ -24,30 +24,30 @@
         extend: {
           colors: {
             brand: {
-              DEFAULT: '#4FB885',
-              dark: '#3B9167',
-              light: '#7CCA8D',
-              dim: 'rgba(79, 184, 133, 0.12)',
-              glow: 'rgba(79, 184, 133, 0.25)'
+              DEFAULT: '#FB4F14',
+              dark: '#D93D08',
+              light: '#FF875C',
+              dim: 'rgba(251, 79, 20, 0.12)',
+              glow: 'rgba(251, 79, 20, 0.25)'
             },
             accent: {
-              DEFAULT: '#DF6A46',
-              dark: '#C34822',
-              dim: 'rgba(223, 106, 70, 0.12)'
+              DEFAULT: '#FB4F14',
+              dark: '#D93D08',
+              dim: 'rgba(251, 79, 20, 0.12)'
             },
             highlight: {
-              DEFAULT: '#DCF20F'
+              DEFAULT: '#FB4F14'
             },
             surface: {
-              main: '#241F21',
-              card: '#373034',
-              subtle: '#483D43',
-              border: '#5E5058'
+              main: '#F9F8EF',
+              card: '#FFFFFF',
+              subtle: '#F1F0E9',
+              border: '#D9D7CF'
             }
           },
           fontFamily: {
-            sans: ['"Uber Move Text"', 'Inter', '-apple-system', 'BlinkMacSystemFont', '"Helvetica Neue"', 'Arial', 'sans-serif'],
-            display: ['"Uber Move"', 'Inter', 'sans-serif']
+            sans: ['"Uber Move Text"', 'DM Sans', '-apple-system', 'BlinkMacSystemFont', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+            display: ['"Uber Move"', 'DM Sans', 'sans-serif']
           }
         }
       }
@@ -62,10 +62,10 @@
   <section id="view-login" class="min-h-screen flex items-center justify-center px-4 fade-in">
     <div class="w-full max-w-sm">
       <div class="flex flex-col items-center text-center mb-6">
-        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand/20 via-surface-card to-[#191519] border border-brand/40 flex items-center justify-center glow-brand mb-3">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand/20 via-surface-card to-[#F9F8EF] border border-brand/40 flex items-center justify-center glow-brand mb-3">
           <span class="material-symbols-outlined text-brand text-4xl">admin_panel_settings</span>
         </div>
-        <h1 class="text-2xl font-display font-extrabold text-white tracking-tight">koren<span class="text-brand">Driver</span></h1>
+        <h1 class="text-2xl font-display font-extrabold tracking-tight"><span class="text-[#176B45]">koren</span><span class="text-brand">Driver</span></h1>
         <p class="text-xs text-brand font-medium tracking-wider uppercase mt-1">Painel do Admin</p>
       </div>
 
@@ -94,13 +94,13 @@
 
   <!-- ==================== DASHBOARD ==================== -->
   <div id="view-dashboard" class="hidden fade-in">
-    <header class="w-full bg-[#19151a]/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-50 px-4 md:px-8 py-3 flex items-center justify-between">
+    <header class="w-full bg-[#F9F8EF]/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-50 px-4 md:px-8 py-3 flex items-center justify-between">
       <div class="flex items-center gap-2">
         <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-dark to-brand flex items-center justify-center shadow-lg shadow-brand/20">
           <span class="material-symbols-outlined text-black font-black text-xl">admin_panel_settings</span>
         </div>
         <div>
-          <span class="font-display font-bold text-white tracking-tight text-base">koren<span class="text-brand">Driver</span></span>
+          <span class="font-display font-bold tracking-tight text-base"><span class="text-[#176B45]">koren</span><span class="text-brand">Driver</span></span>
           <span class="block text-[9px] text-brand uppercase font-mono tracking-widest leading-none">Painel do Admin</span>
         </div>
       </div>
@@ -114,7 +114,7 @@
 
     <main class="max-w-6xl mx-auto px-4 md:px-8 py-6 space-y-6">
       <!-- Card do Link de Convite -->
-      <div class="bg-gradient-to-r from-surface-card to-[#2a2427] p-4 rounded-2xl border border-surface-border space-y-3">
+      <div class="bg-gradient-to-r from-surface-card to-[#F1F0E9] p-4 rounded-2xl border border-surface-border space-y-3">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-white flex items-center gap-1.5">
             <span class="material-symbols-outlined text-brand text-base">link</span>

@@ -1,24 +1,30 @@
-/* Design system exclusivo do painel Super Admin — não compartilhado com o app do motorista nem com o painel do Admin */
+/* Orioles & Crest design system — painel Super Admin */
 
 :root {
-  --sa-bg-0: #141012;
-  --sa-bg-1: #191517;
-  --sa-bg-2: #1e1a1c;
-  --sa-card: #292427;
-  --sa-border: rgba(255, 255, 255, 0.08);
-  --sa-text-1: #f5f7f8;
-  --sa-text-2: #8b949e;
-  --sa-green: #4FB885;
-  --sa-green-2: #3B9167;
-  --sa-red: #DF6A46;
-  --sa-yellow: #DCF20F;
+  --sa-bg-0: #F9F8EF;
+  --sa-bg-1: #FFFFFF;
+  --sa-bg-2: #F1F0E9;
+  --sa-card: #FFFFFF;
+  --sa-border: #D9D7CF;
+  --sa-text-1: #111111;
+  --sa-text-2: #767676;
+  --sa-green: #FB4F14;
+  --sa-green-2: #D93D08;
+  --sa-red: #FB4F14;
+  --sa-yellow: #FB4F14;
 }
 
 .sa-root {
-  font-family: 'Uber Move Text', 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   background: var(--sa-bg-0);
   color: var(--sa-text-1);
 }
+
+.sa-root { color-scheme: light; }
+.sa-root input, .sa-root select, .sa-root textarea { color: #111111; background: #FFFFFF; border-color: #D9D7CF; }
+.sa-root input:focus, .sa-root select:focus, .sa-root textarea:focus { border-color: #FB4F14; outline: none; box-shadow: 0 0 0 3px rgba(251,79,20,.14); }
+.sa-root button:focus-visible, .sa-root a:focus-visible { outline: 2px solid #FB4F14; outline-offset: 2px; }
+.sa-nav-item:hover, .sa-btn-secondary:hover, .sa-table tbody tr:hover, .sa-dropdown-item:hover { background: #F1F0E9; }
 
 .sa-card {
   background: var(--sa-card);
@@ -56,7 +62,7 @@
 }
 .sa-nav-item:hover { background: rgba(255,255,255,0.04); color: var(--sa-text-1); }
 .sa-nav-item.active {
-  background: rgba(79, 184, 133, 0.08);
+  background: rgba(251, 79, 20, 0.08);
   color: var(--sa-text-1);
 }
 .sa-nav-item.active::before {
@@ -118,7 +124,7 @@
 /* Buttons */
 .sa-btn-primary {
   background: var(--sa-green);
-  color: #06170f;
+  color: #FFFFFF;
   font-weight: 600;
   transition: background 0.15s ease, transform 0.1s ease;
 }
@@ -135,12 +141,12 @@
 .sa-btn-secondary:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.16); }
 
 .sa-btn-danger {
-  background: rgba(223, 106, 70, 0.1);
-  border: 1px solid rgba(223, 106, 70, 0.3);
+  background: rgba(251, 79, 20, 0.1);
+  border: 1px solid rgba(251, 79, 20, 0.3);
   color: var(--sa-red);
   transition: background 0.15s ease;
 }
-.sa-btn-danger:hover { background: rgba(223, 106, 70, 0.18); }
+.sa-btn-danger:hover { background: rgba(251, 79, 20, 0.18); }
 
 /* Badges */
 .sa-badge {
@@ -153,8 +159,8 @@
   border-radius: 999px;
   line-height: 1.4;
 }
-.sa-badge-green { background: rgba(79, 184, 133, 0.12); color: var(--sa-green); border: 1px solid rgba(79, 184, 133, 0.28); }
-.sa-badge-red { background: rgba(223, 106, 70, 0.12); color: var(--sa-red); border: 1px solid rgba(223, 106, 70, 0.28); }
+.sa-badge-green { background: rgba(251, 79, 20, 0.12); color: var(--sa-green); border: 1px solid rgba(251, 79, 20, 0.28); }
+.sa-badge-red { background: rgba(251, 79, 20, 0.12); color: var(--sa-red); border: 1px solid rgba(251, 79, 20, 0.28); }
 .sa-badge-yellow { background: rgba(245, 158, 11, 0.12); color: var(--sa-yellow); border: 1px solid rgba(245, 158, 11, 0.28); }
 .sa-badge-gray { background: rgba(255, 255, 255, 0.06); color: var(--sa-text-2); border: 1px solid var(--sa-border); }
 
@@ -191,7 +197,7 @@
   display: flex; align-items: center; justify-content: center;
   font-size: 12px;
   font-weight: 700;
-  background: rgba(79, 184, 133, 0.12);
+  background: rgba(251, 79, 20, 0.12);
   color: var(--sa-green);
   flex-shrink: 0;
 }
@@ -200,7 +206,7 @@
 .sa-chart-tooltip {
   position: absolute;
   pointer-events: none;
-  background: #241f21;
+  background: #FFFFFF;
   border: 1px solid var(--sa-border);
   border-radius: 8px;
   padding: 8px 10px;
@@ -227,7 +233,7 @@
 
 /* Dropdown */
 .sa-dropdown {
-  background: #1e1a1c;
+  background: #FFFFFF;
   border: 1px solid var(--sa-border);
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.45);
