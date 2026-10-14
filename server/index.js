@@ -19,6 +19,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set('trust proxy', 1); // atrás do Nginx: necessário pra req.ip e o rate limiter enxergarem o IP real do cliente
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -43,7 +44,8 @@ app.use(cors(corsOptions));
 // Limite padrão do Express é 100kb — pequeno demais aqui: o cadastro envia fotos
 // (CNH, veículo, CRLV) como base64 dentro do próprio JSON, e mesmo comprimidas
 // no cliente (900px, qualidade 0.75) facilmente passam disso.
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Rate limit nas rotas de login — únicos pontos de força bruta de senha do app
