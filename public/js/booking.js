@@ -4,7 +4,11 @@ const state = {
   vehicle: null,
   rates: null,
   serviceType: 'corrida',
-  stopCount: 0
+  stopCount: 0,
+  // Coordenadas (lat/lon) de cada campo de endereço, guardadas só quando o
+  // usuário escolhe uma sugestão da lista — é a partir delas que a rota real
+  // (OSRM) calcula km/min de verdade, em vez do passageiro chutar os números.
+  coordsByInputId: {}
 };
 
 const serviceLabels = {
@@ -62,19 +66,35 @@ function setupAddressAutocomplete(inputId, suggestionsId) {
     box.innerHTML = '';
   }
 
+  function showMessage(text, isError) {
+    box.innerHTML = `<p class="px-3 py-2 text-xs ${isError ? 'text-red-400' : 'text-slate-400'}">${text}</p>`;
+    box.classList.remove('hidden');
+  }
+
   async function search(query) {
     if (currentController) currentController.abort();
     currentController = new AbortController();
+
+    // Feedback imediato — sem isso, entre digitar e a lista aparecer (ou dar
+    // erro) a tela ficava muda, parecendo travada mesmo quando só é a espera
+    // do debounce/rede.
+    showMessage('Buscando endereço...', false);
 
     try {
       // viewbox+bounded restringe a busca ao Ceará (koren opera nessa região) —
       // sem isso o Nominatim trazia sugestão de qualquer lugar do Brasil.
       const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=5&countrycodes=br&viewbox=-41.42,-2.78,-37.25,-7.86&bounded=1&q=${encodeURIComponent(query)}`;
       const res = await fetch(url, { signal: currentController.signal });
+
+      if (!res.ok) {
+        showMessage('Erro ao buscar endereço — tenta de novo em alguns segundos.', true);
+        return;
+      }
+
       const results = await res.json();
 
       if (!results.length) {
-        hideSuggestions();
+        showMessage('Nenhum endereço encontrado. Tenta simplificar (ex: só o nome da rua e bairro).', false);
         return;
       }
 
@@ -87,18 +107,26 @@ function setupAddressAutocomplete(inputId, suggestionsId) {
 
       box.querySelectorAll('button[data-idx]').forEach(btn => {
         btn.onclick = () => {
-          input.value = results[Number(btn.dataset.idx)].display_name;
+          const r = results[Number(btn.dataset.idx)];
+          input.value = r.display_name;
+          state.coordsByInputId[inputId] = { lat: parseFloat(r.lat), lon: parseFloat(r.lon) };
           hideSuggestions();
+          calculateRoute();
         };
       });
 
       box.classList.remove('hidden');
     } catch (err) {
-      if (err.name !== 'AbortError') console.error('Erro na busca de endereço:', err);
+      if (err.name === 'AbortError') return; // superada por uma busca mais nova, nada a mostrar
+      console.error('Erro na busca de endereço:', err);
+      showMessage('Erro ao buscar endereço — tenta de novo em alguns segundos.', true);
     }
   }
 
   input.addEventListener('input', () => {
+    // Texto mudou na mão — a coordenada guardada (se tinha) não vale mais
+    // pra rota, senão calcularia com um endereço que não é mais esse.
+    delete state.coordsByInputId[inputId];
     clearTimeout(debounceTimer);
     const query = input.value.trim();
     if (query.length < 3) {
@@ -114,7 +142,9 @@ function setupAddressAutocomplete(inputId, suggestionsId) {
 }
 
 function removeStop(id) {
+  delete state.coordsByInputId[`stop-input-${id}`];
   document.getElementById(`stop-row-${id}`)?.remove();
+  calculateRoute();
 }
 
 function getStops() {
@@ -184,6 +214,76 @@ function selectServiceType(type) {
   document.getElementById('booking-notes-label').textContent =
     type === 'corrida' ? 'Observação (opcional)' : `Descrição do ${serviceLabels[type].toLowerCase()} (opcional)`;
   document.getElementById('booking-notes').placeholder = serviceNotesPlaceholder[type];
+}
+
+// Calcula distância/tempo reais pela rota (OSRM, demo pública gratuita, sem
+// chave de API) assim que origem e destino (e paradas, se houver) tiverem
+// coordenada — ou seja, foram escolhidos da lista de sugestões, não só
+// digitados. Preenche os campos de km/min automaticamente em vez do
+// passageiro ter que chutar esses valores.
+let routeRequestSeq = 0;
+
+async function calculateRoute() {
+  const statusEl = document.getElementById('route-status');
+  const originCoords = state.coordsByInputId['booking-origin'];
+  const destCoords = state.coordsByInputId['booking-destination'];
+
+  if (!originCoords || !destCoords) return;
+
+  const stopInputs = Array.from(document.querySelectorAll('#booking-stops-list input'));
+  const filledStops = stopInputs.filter(inp => inp.value.trim());
+  const stopCoordsList = filledStops.map(inp => state.coordsByInputId[inp.id]).filter(Boolean);
+
+  // Alguma parada preenchida sem coordenada (digitada na mão, sem escolher
+  // sugestão) deixaria a rota incompleta — melhor avisar do que calcular errado.
+  if (stopCoordsList.length !== filledStops.length) {
+    if (statusEl) {
+      statusEl.textContent = 'Escolha a parada na lista de sugestões pra recalcular a rota.';
+      statusEl.classList.remove('hidden');
+    }
+    return;
+  }
+
+  const seq = ++routeRequestSeq;
+  if (statusEl) {
+    statusEl.textContent = 'Calculando rota...';
+    statusEl.classList.remove('hidden', 'text-red-400');
+  }
+
+  const points = [originCoords, ...stopCoordsList, destCoords].map(c => `${c.lon},${c.lat}`).join(';');
+
+  try {
+    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${points}?overview=false`);
+    const data = await res.json();
+    if (seq !== routeRequestSeq) return; // resposta de uma busca já superada
+
+    if (data.code !== 'Ok' || !data.routes?.[0]) {
+      if (statusEl) {
+        statusEl.textContent = 'Não consegui calcular a rota — pode ajustar os valores manualmente.';
+        statusEl.classList.add('text-red-400');
+      }
+      return;
+    }
+
+    const km = data.routes[0].distance / 1000;
+    const min = data.routes[0].duration / 60;
+
+    document.getElementById('booking-distance').value = km.toFixed(1);
+    document.getElementById('booking-duration').value = Math.round(min);
+    updateEstimate();
+
+    if (statusEl) {
+      statusEl.textContent = `Calculado pela rota real: ${km.toFixed(1)} km, ${Math.round(min)} min.`;
+      statusEl.classList.remove('text-red-400');
+    }
+  } catch (err) {
+    if (seq !== routeRequestSeq) return;
+    console.error('Erro ao calcular rota:', err);
+    if (statusEl) {
+      statusEl.textContent = 'Não consegui calcular a rota — pode ajustar os valores manualmente.';
+      statusEl.classList.add('text-red-400');
+    }
+  }
 }
 
 function updateEstimate() {

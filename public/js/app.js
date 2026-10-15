@@ -985,19 +985,35 @@ function setupAddressAutocomplete(inputId, suggestionsId) {
     box.innerHTML = '';
   }
 
+  function showMessage(text, isError) {
+    box.innerHTML = `<p class="px-3 py-2 text-xs ${isError ? 'text-red-400' : 'text-slate-400'}">${text}</p>`;
+    box.classList.remove('hidden');
+  }
+
   async function search(query) {
     if (currentController) currentController.abort();
     currentController = new AbortController();
+
+    // Feedback imediato — sem isso, entre digitar e a lista aparecer (ou dar
+    // erro) a tela ficava muda, parecendo travada mesmo quando só é a espera
+    // do debounce/rede.
+    showMessage('Buscando endereço...', false);
 
     try {
       // viewbox+bounded restringe a busca ao Ceará (koren opera nessa região) —
       // sem isso o Nominatim trazia sugestão de qualquer lugar do Brasil.
       const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=5&countrycodes=br&viewbox=-41.42,-2.78,-37.25,-7.86&bounded=1&q=${encodeURIComponent(query)}`;
       const res = await fetch(url, { signal: currentController.signal });
+
+      if (!res.ok) {
+        showMessage('Erro ao buscar endereço — tenta de novo em alguns segundos.', true);
+        return;
+      }
+
       const results = await res.json();
 
       if (!results.length) {
-        hideSuggestions();
+        showMessage('Nenhum endereço encontrado. Tenta simplificar (ex: só o nome da rua e bairro).', false);
         return;
       }
 
@@ -1017,7 +1033,9 @@ function setupAddressAutocomplete(inputId, suggestionsId) {
 
       box.classList.remove('hidden');
     } catch (err) {
-      if (err.name !== 'AbortError') console.error('Erro na busca de endereço:', err);
+      if (err.name === 'AbortError') return; // superada por uma busca mais nova, nada a mostrar
+      console.error('Erro na busca de endereço:', err);
+      showMessage('Erro ao buscar endereço — tenta de novo em alguns segundos.', true);
     }
   }
 
