@@ -211,6 +211,10 @@ function showError() {
 function showForm() {
   document.getElementById('view-loading').classList.add('hidden');
   document.getElementById('view-form').classList.remove('hidden');
+  // Precisa esperar o container ficar visível (não display:none) pro Leaflet
+  // conseguir calcular o tamanho do mapa direito — se inicializasse antes,
+  // ele nasceria com altura/largura zero e ficaria quebrado.
+  initMap();
 }
 
 function renderDriver() {
@@ -232,6 +236,60 @@ function selectServiceType(type) {
   document.getElementById('booking-notes-label').textContent =
     type === 'corrida' ? 'Observação (opcional)' : `Descrição do ${serviceLabels[type].toLowerCase()} (opcional)`;
   document.getElementById('booking-notes').placeholder = serviceNotesPlaceholder[type];
+}
+
+// Mapa com Origem/Paradas/Destino e o traçado da rota — Leaflet + tiles do
+// OpenStreetMap, gratuito e sem chave de API (mesma filosofia do resto da
+// busca de endereço/rota desta tela).
+let map = null;
+let mapMarkers = null;
+let mapRouteLine = null;
+
+function initMap() {
+  if (map || typeof L === 'undefined') return;
+  const container = document.getElementById('route-map');
+  if (!container) return;
+
+  map = L.map(container, { attributionControl: true }).setView([-3.73, -38.52], 12); // Fortaleza/CE
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(map);
+
+  mapMarkers = L.layerGroup().addTo(map);
+}
+
+function addMapPoint(coords, color) {
+  L.circleMarker([coords.lat, coords.lon], {
+    radius: 8,
+    weight: 2,
+    color: '#FFFFFF',
+    fillColor: color,
+    fillOpacity: 1
+  }).addTo(mapMarkers);
+}
+
+function updateRouteMap(originCoords, stopCoordsList, destCoords, geometryCoords) {
+  if (!map) return;
+
+  mapMarkers.clearLayers();
+  if (mapRouteLine) {
+    map.removeLayer(mapRouteLine);
+    mapRouteLine = null;
+  }
+
+  addMapPoint(originCoords, '#22C55E'); // verde = origem
+  stopCoordsList.forEach(c => addMapPoint(c, '#FB4F14')); // laranja = parada
+  addMapPoint(destCoords, '#EF4444'); // vermelho = destino
+
+  if (geometryCoords && geometryCoords.length) {
+    const latlngs = geometryCoords.map(([lon, lat]) => [lat, lon]);
+    mapRouteLine = L.polyline(latlngs, { color: '#FB4F14', weight: 4 }).addTo(map);
+    map.fitBounds(mapRouteLine.getBounds(), { padding: [24, 24] });
+  } else {
+    const bounds = L.latLngBounds([[originCoords.lat, originCoords.lon], [destCoords.lat, destCoords.lon]]);
+    map.fitBounds(bounds, { padding: [24, 24] });
+  }
 }
 
 // Calcula distância/tempo reais pela rota (OSRM, demo pública gratuita, sem
@@ -277,13 +335,13 @@ async function calculateRoute() {
   const points = [originCoords, ...stopCoordsList, destCoords].map(c => `${c.lon},${c.lat}`).join(';');
 
   try {
-    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${points}?overview=false`);
+    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${points}?overview=full&geometries=geojson`);
     const data = await res.json();
     if (seq !== routeRequestSeq) return; // resposta de uma busca já superada
 
     if (data.code !== 'Ok' || !data.routes?.[0]) {
       if (statusEl) {
-        statusEl.textContent = 'Não consegui calcular a rota — pode ajustar os valores manualmente.';
+        statusEl.textContent = 'Não consegui calcular a rota automaticamente. Confira o endereço escolhido ou tente novamente.';
         statusEl.classList.add('text-red-400');
       }
       return;
@@ -295,6 +353,7 @@ async function calculateRoute() {
     document.getElementById('booking-distance').value = km.toFixed(1);
     document.getElementById('booking-duration').value = Math.round(min);
     updateEstimate();
+    updateRouteMap(originCoords, stopCoordsList, destCoords, data.routes[0].geometry.coordinates);
 
     if (statusEl) {
       statusEl.textContent = `Calculado pela rota real: ${km.toFixed(1)} km, ${Math.round(min)} min (já com margem de trânsito — sem dados de trânsito ao vivo).`;
@@ -304,7 +363,7 @@ async function calculateRoute() {
     if (seq !== routeRequestSeq) return;
     console.error('Erro ao calcular rota:', err);
     if (statusEl) {
-      statusEl.textContent = 'Não consegui calcular a rota — pode ajustar os valores manualmente.';
+      statusEl.textContent = 'Não consegui calcular a rota automaticamente. Confira o endereço escolhido ou tente novamente.';
       statusEl.classList.add('text-red-400');
     }
   }
