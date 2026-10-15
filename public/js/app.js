@@ -1,5 +1,23 @@
 import { api } from './api.js';
 
+// Muita rua pequena (loteamento, conjunto residencial) não tem o número da
+// casa mapeado no OpenStreetMap — a busca só confirma a rua. Sem isso, ao
+// clicar na sugestão o número que a pessoa digitou (ex: "495") seria
+// substituído pelo endereço genérico da rua.
+function extractHouseNumber(query) {
+  const match = query.match(/\b(\d{1,6})\b(?!.*\d)/);
+  return match ? match[1] : null;
+}
+
+function buildFinalAddress(rawQuery, displayName) {
+  const houseNumber = extractHouseNumber(rawQuery);
+  if (!houseNumber || displayName.includes(houseNumber)) return displayName;
+
+  const firstComma = displayName.indexOf(',');
+  if (firstComma === -1) return `${displayName}, ${houseNumber}`;
+  return `${displayName.slice(0, firstComma)}, ${houseNumber}${displayName.slice(firstComma)}`;
+}
+
 // Estado global da aplicação no frontend
 const state = {
   currentScreen: 'cockpit',
@@ -1026,7 +1044,7 @@ function setupAddressAutocomplete(inputId, suggestionsId) {
 
       box.querySelectorAll('button[data-idx]').forEach(btn => {
         btn.onclick = () => {
-          input.value = results[Number(btn.dataset.idx)].display_name;
+          input.value = buildFinalAddress(query, results[Number(btn.dataset.idx)].display_name);
           hideSuggestions();
         };
       });
