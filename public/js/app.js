@@ -63,7 +63,6 @@ window.handleExportData = handleExportData;
 window.openDeleteAccountModal = openDeleteAccountModal;
 window.closeDeleteAccountModal = closeDeleteAccountModal;
 window.handleConfirmDeleteAccount = handleConfirmDeleteAccount;
-window.recenterDemandMap = recenterDemandMap;
 window.handleAcceptRide = handleAcceptRide;
 window.handleRejectRide = handleRejectRide;
 window.handleMarkArrived = handleMarkArrived;
@@ -91,85 +90,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (ok) {
       const screen = decidePostAuthScreen(state.driver);
       navigateTo(screen);
-      if (screen === 'cockpit') {
-        initDemandMap();
-        startPendingRidesPolling();
-      }
+      if (screen === 'cockpit') startPendingRidesPolling();
       return;
     }
   }
 
   navigateTo('login');
 });
-
-let demandMap;
-let demandMarker;
-let demandMapPosition;
-
-// Inicializa um mapa próprio para o radar, sem depender de iframe de terceiros.
-async function initDemandMap() {
-  const mapElement = document.getElementById('demand-map');
-  if (!mapElement || !window.L) return;
-
-  const fallback = { lat: -23.5613, lng: -46.6565, label: 'Você está aqui (Av. Paulista)' };
-
-  function setMap(lat, lng, label) {
-    demandMapPosition = { lat, lng };
-    if (!demandMap) {
-      demandMap = L.map('demand-map', { zoomControl: false, attributionControl: true }).setView([lat, lng], 15);
-      L.control.zoom({ position: 'bottomright' }).addTo(demandMap);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        subdomains: 'abcd',
-        maxZoom: 20,
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
-      }).addTo(demandMap);
-    } else {
-      demandMap.setView([lat, lng], 15);
-    }
-
-    if (demandMarker) demandMarker.setLatLng([lat, lng]);
-    else demandMarker = L.circleMarker([lat, lng], {
-      radius: 8,
-      color: '#FFFFFF',
-      weight: 3,
-      fillColor: '#FB4F14',
-      fillOpacity: 1
-    }).addTo(demandMap);
-
-    const labelEl = document.getElementById('map-you-are-here');
-    if (labelEl) labelEl.textContent = '📍 ' + label;
-  }
-
-  // Fallback por IP: cobre quando o GPS do navegador falha, é negado,
-  // ou a página é acessada fora de localhost/HTTPS (geolocalização é bloqueada nesse caso)
-  async function setMapByIp() {
-    try {
-      const res = await fetch('http://ip-api.com/json/');
-      const data = await res.json();
-      if (data.status === 'success' && data.lat && data.lon) {
-        setMap(data.lat, data.lon, `Você está aqui (${data.city || 'aprox.'})`);
-        return;
-      }
-    } catch (err) {
-      console.error('Erro ao localizar por IP:', err);
-    }
-    setMap(fallback.lat, fallback.lng, fallback.label);
-  }
-
-  if (navigator.geolocation && window.isSecureContext) {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setMap(pos.coords.latitude, pos.coords.longitude, 'Você está aqui'),
-      () => setMapByIp(),
-      { timeout: 6000 }
-    );
-  } else {
-    await setMapByIp();
-  }
-}
-
-function recenterDemandMap() {
-  if (demandMap && demandMapPosition) demandMap.setView([demandMapPosition.lat, demandMapPosition.lng], 15);
-}
 
 // ============================================================================
 // Pedidos de Corrida (Link Direto) — pedido do passageiro aparece aqui pro
@@ -228,7 +155,7 @@ function renderPendingRides() {
     } else if (r.status === 'accepted' && arrived) {
       actions = `
         <button onclick="handleRejectRide(${r.id})" class="flex-1 py-2 rounded-lg border border-surface-border text-slate-400 text-xs font-semibold">Cancelar</button>
-        <button onclick="handleStartRide(${r.id})" class="flex-1 py-2 rounded-lg bg-brand text-black text-xs font-bold">Iniciar Corrida</button>
+        <button onclick="handleStartRide(${r.id}, ${r.destination_lat ?? 'null'}, ${r.destination_lng ?? 'null'})" class="flex-1 py-2 rounded-lg bg-brand text-black text-xs font-bold">Iniciar Corrida</button>
       `;
     } else if (r.status === 'in_progress') {
       actions = `<button onclick="handleCompleteRide(${r.id})" class="w-full py-2 rounded-lg bg-brand text-black text-xs font-bold">Finalizar Corrida</button>`;
@@ -271,10 +198,15 @@ function handleMarkArrived(id) {
   renderPendingRides();
 }
 
-async function handleStartRide(id) {
+async function handleStartRide(id, destinationLat, destinationLng) {
   const res = await api.startRide(id);
-  if (res.success) { showToast('Corrida iniciada!'); pollPendingRides(); }
-  else showToast(res.error || 'Erro ao iniciar corrida.');
+  if (res.success) {
+    showToast('Corrida iniciada!');
+    if (destinationLat != null && destinationLng != null) openWazeNavigation(destinationLat, destinationLng);
+    pollPendingRides();
+  } else {
+    showToast(res.error || 'Erro ao iniciar corrida.');
+  }
 }
 
 async function handleCompleteRide(id) {
@@ -579,7 +511,7 @@ async function handleLoginSubmit(event) {
       await loadInitialData();
       const screen = decidePostAuthScreen(state.driver);
       navigateTo(screen);
-      if (screen === 'cockpit') { initDemandMap(); startPendingRidesPolling(); }
+      if (screen === 'cockpit') startPendingRidesPolling();
     } else {
       showToast(res.error || 'Credenciais inválidas.');
     }
@@ -852,7 +784,7 @@ async function handleRegisterStep2(event) {
       await loadInitialData();
       const screen = decidePostAuthScreen(state.driver);
       navigateTo(screen);
-      if (screen === 'cockpit') { initDemandMap(); startPendingRidesPolling(); }
+      if (screen === 'cockpit') startPendingRidesPolling();
     } else {
       const errorMsg = (vehRes && vehRes.error) ? vehRes.error : 'Erro ao cadastrar veículo.';
       showRegisterError(errorEl, errorMsg);

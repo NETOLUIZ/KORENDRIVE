@@ -91,6 +91,11 @@ END $$;
 ALTER TABLE drivers ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
 ALTER TABLE drivers ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
 
+-- Data da última corrida que atualizou today_earnings/today_rides/km_driven —
+-- é o que permite "hoje" virar "zero" de novo sozinho no primeiro corrida do
+-- dia seguinte, sem precisar de um job de reset rodando à meia-noite.
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS today_stats_date DATE DEFAULT CURRENT_DATE;
+
 CREATE TABLE IF NOT EXISTS vehicles (
   id SERIAL PRIMARY KEY,
   driver_id INTEGER NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,

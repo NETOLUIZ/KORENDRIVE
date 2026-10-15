@@ -16,10 +16,6 @@
   <!-- Google Material Symbols -->
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
 
-  <!-- Leaflet para o radar baseado em dados OpenStreetMap -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-
   <!-- Tailwind Theme Configuration -->
   <script>
     tailwind.config = {
@@ -529,35 +525,6 @@
         </div>
       </div>
 
-      <!-- Radar de Demanda / Heatmap -->
-      <div class="bg-surface-card p-4 rounded-2xl border border-surface-border">
-        <div class="flex items-center justify-between mb-2">
-          <div class="flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-brand text-base">radar</span>
-            <span class="text-xs font-bold text-white uppercase tracking-wider">Radar de Demanda</span>
-          </div>
-          <span class="text-[10px] text-brand font-bold bg-brand/10 px-2 py-0.5 rounded-full">1.4x Dinâmico</span>
-        </div>
-
-        <!-- Mapa Leaflet com base OpenStreetMap e controles próprios do app -->
-        <div class="relative h-40 rounded-xl bg-[#F1F0E9] overflow-hidden border border-slate-800">
-          <div id="demand-map" class="demand-map w-full h-full" aria-label="Mapa da sua região"></div>
-
-          <div class="absolute inset-0 pointer-events-none flex items-end p-2">
-            <span id="map-you-are-here" class="text-[10px] font-semibold text-white bg-black/70 px-2 py-0.5 rounded-full border border-slate-700">📍 Localizando...</span>
-          </div>
-
-          <button type="button" onclick="recenterDemandMap()" class="absolute top-2 left-2 z-[500] w-8 h-8 rounded-full bg-white text-slate-700 shadow-md flex items-center justify-center" aria-label="Centralizar no meu local">
-            <span class="material-symbols-outlined text-base">my_location</span>
-          </button>
-
-          <div class="absolute top-2 right-2 z-[500] bg-black/80 border border-slate-800 text-[9px] px-2 py-1 rounded text-slate-300 pointer-events-none">
-            ✈ Aeroporto: Alta
-          </div>
-        </div>
-
-      </div>
-
       <!-- Corridas da Semana (dados reais) -->
       <div class="bg-surface-card p-4 rounded-2xl border border-surface-border">
         <div class="flex items-center gap-1.5 mb-3">
@@ -597,17 +564,17 @@
       <div class="bg-gradient-to-br from-surface-card to-[#F1F0E9] p-4 rounded-2xl border border-surface-border">
         <span class="text-xs text-slate-400 font-medium">Total de Custos do Mês</span>
         <div class="flex items-baseline gap-2 mb-3">
-          <span id="costs-total" class="text-3xl font-display font-black text-white">R$ 842,50</span>
+          <span id="costs-total" class="text-3xl font-display font-black text-white">R$ 0,00</span>
         </div>
 
         <div class="grid grid-cols-2 gap-2 pt-3 border-t border-slate-800">
           <div class="bg-surface-subtle/80 p-2.5 rounded-xl">
             <span class="text-[10px] text-slate-400">Faturamento Bruto</span>
-            <p id="costs-gross" class="text-sm font-bold text-white mt-0.5">R$ 3.260,00</p>
+            <p id="costs-gross" class="text-sm font-bold text-white mt-0.5">R$ 0,00</p>
           </div>
           <div class="bg-surface-subtle/80 p-2.5 rounded-xl border border-brand/20">
             <span class="text-[10px] text-brand">Lucro Líquido Real</span>
-            <p id="costs-net" class="text-sm font-bold text-brand mt-0.5">R$ 2.417,50</p>
+            <p id="costs-net" class="text-sm font-bold text-brand mt-0.5">R$ 0,00</p>
           </div>
         </div>
       </div>
@@ -624,9 +591,9 @@
           <span class="material-symbols-outlined text-lg">lightbulb</span>
         </div>
         <div>
-          <p class="text-xs font-bold text-white">Meta de combustível atingida!</p>
+          <p class="text-xs font-bold text-white">Resumo de combustível</p>
           <p class="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
-            Seus gastos com combustível representam <span class="text-brand font-semibold" id="costs-fuel-pct">42,6%</span> das despesas totais. Economia real nos postos parceiros koren: <span class="text-white font-semibold">R$ 54,10</span> este mês.
+            Seus gastos com combustível representam <span class="text-brand font-semibold" id="costs-fuel-pct">0%</span> das despesas totais deste mês.
           </p>
         </div>
       </div>

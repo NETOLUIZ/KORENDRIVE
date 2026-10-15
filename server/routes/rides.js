@@ -2,6 +2,7 @@ import express from 'express';
 import { requireDriver, requireApprovedDriver } from '../middleware/auth.js';
 import { withDbContext } from '../middleware/dbContext.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { applyCompletedRideStats } from '../utils/driverStats.js';
 
 const router = express.Router();
 
@@ -106,7 +107,11 @@ router.patch('/:id/complete', requireDriver, requireApprovedDriver, withDbContex
   `, [req.params.id, req.driver.id]);
 
   if (!rows[0]) return res.status(404).json({ error: 'Corrida não encontrada ou em outro status.' });
-  res.json({ success: true, ride: rows[0] });
+
+  const ride = rows[0];
+  await applyCompletedRideStats(req.db, req.driver.id, Number(ride.fare), Number(ride.distance_km));
+
+  res.json({ success: true, ride });
 }));
 
 router.patch('/:id/cancel', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
@@ -131,14 +136,19 @@ router.post('/', requireDriver, requireApprovedDriver, withDbContext, asyncHandl
   const now = new Date();
   const formattedDate = `Hoje, ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
+  const parsedFare = parseFloat(fare);
+  const parsedDistance = parseFloat(distance_km) || 0;
+
   const { rows } = await req.db.query(`
     INSERT INTO rides (driver_id, passenger_name, passenger_phone, origin, destination, distance_km, duration_min, fare, status, date_time, notes)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'completed', $9, $10)
     RETURNING *
   `, [
     req.driver.id, passenger_name, passenger_phone || '', origin, destination,
-    parseFloat(distance_km) || 0, parseInt(duration_min) || 0, parseFloat(fare), formattedDate, notes || ''
+    parsedDistance, parseInt(duration_min) || 0, parsedFare, formattedDate, notes || ''
   ]);
+
+  await applyCompletedRideStats(req.db, req.driver.id, parsedFare, parsedDistance);
 
   res.json({ success: true, ride: rows[0] });
 }));

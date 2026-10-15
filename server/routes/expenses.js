@@ -13,7 +13,17 @@ router.get('/', requireDriver, requireApprovedDriver, withDbContext, asyncHandle
   );
 
   const totalCosts = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
-  const grossRevenue = 3260.00;
+
+  // Faturamento Bruto do mês: soma real das corridas concluídas, não um
+  // número fixo — antes "Faturamento Bruto" e "Lucro Líquido" mostravam
+  // sempre R$3.260,00 pra qualquer motorista, independente do que ele
+  // tivesse de fato rodado.
+  const { rows: revenueRows } = await req.db.query(`
+    SELECT COALESCE(SUM(fare), 0) as total
+    FROM rides
+    WHERE driver_id = $1 AND status = 'completed' AND created_at >= date_trunc('month', now())
+  `, [req.driver.id]);
+  const grossRevenue = Number(revenueRows[0].total);
   const netProfit = grossRevenue - totalCosts;
 
   const fuelCosts = expenses
@@ -23,7 +33,7 @@ router.get('/', requireDriver, requireApprovedDriver, withDbContext, asyncHandle
   const fuelPercentage = totalCosts > 0 ? ((fuelCosts / totalCosts) * 100).toFixed(1) : 0;
 
   res.json({
-    metrics: { totalCosts, grossRevenue, netProfit, fuelCosts, fuelPercentage, partnerSavings: 54.10 },
+    metrics: { totalCosts, grossRevenue, netProfit, fuelCosts, fuelPercentage },
     expenses
   });
 }));
