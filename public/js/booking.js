@@ -67,7 +67,9 @@ function setupAddressAutocomplete(inputId, suggestionsId) {
     currentController = new AbortController();
 
     try {
-      const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=5&countrycodes=br&q=${encodeURIComponent(query)}`;
+      // viewbox+bounded restringe a busca ao Ceará (koren opera nessa região) —
+      // sem isso o Nominatim trazia sugestão de qualquer lugar do Brasil.
+      const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=5&countrycodes=br&viewbox=-41.42,-2.78,-37.25,-7.86&bounded=1&q=${encodeURIComponent(query)}`;
       const res = await fetch(url, { signal: currentController.signal });
       const results = await res.json();
 
