@@ -48,15 +48,76 @@ router.put('/rates', requireDriver, requireApprovedDriver, withDbContext, asyncH
   res.json({ success: true, rates });
 }));
 
-// Resumo de corridas dos últimos 7 dias (alimenta o Cockpit)
+// Resumo de corridas dos últimos 7 dias (alimenta o Cockpit) — só conta
+// corrida concluída de verdade; 'requested'/'accepted'/'in_progress' ainda
+// não aconteceram, não podem inflar o faturamento da semana.
 router.get('/week-summary', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
   const { rows } = await req.db.query(`
     SELECT COUNT(*) as count, COALESCE(SUM(fare), 0) as total
     FROM rides
-    WHERE driver_id = $1 AND created_at >= now() - INTERVAL '7 days'
+    WHERE driver_id = $1 AND status = 'completed' AND created_at >= now() - INTERVAL '7 days'
   `, [req.driver.id]);
 
   res.json({ count: Number(rows[0].count), total: Number(rows[0].total) });
+}));
+
+// Pedidos de corrida pendentes (vindos do Link Direto) — payload leve pro
+// polling do Cockpit, sem buscar tarifas junto.
+router.get('/pending', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
+  const { rows } = await req.db.query(`
+    SELECT * FROM rides
+    WHERE driver_id = $1 AND status IN ('requested', 'accepted', 'in_progress')
+    ORDER BY created_at ASC
+  `, [req.driver.id]);
+
+  res.json({ rides: rows });
+}));
+
+// Transições do ciclo de vida do pedido — cada uma só avança a partir do
+// status esperado (a cláusula AND status=... na WHERE evita corrida dupla
+// de clique ou uma transição fora de ordem passar batido).
+router.patch('/:id/accept', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
+  const { rows } = await req.db.query(`
+    UPDATE rides SET status = 'accepted', accepted_at = now()
+    WHERE id = $1 AND driver_id = $2 AND status = 'requested'
+    RETURNING *
+  `, [req.params.id, req.driver.id]);
+
+  if (!rows[0]) return res.status(404).json({ error: 'Pedido não encontrado ou já avaliado.' });
+  res.json({ success: true, ride: rows[0] });
+}));
+
+router.patch('/:id/start', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
+  const { rows } = await req.db.query(`
+    UPDATE rides SET status = 'in_progress', started_at = now()
+    WHERE id = $1 AND driver_id = $2 AND status = 'accepted'
+    RETURNING *
+  `, [req.params.id, req.driver.id]);
+
+  if (!rows[0]) return res.status(404).json({ error: 'Corrida não encontrada ou em outro status.' });
+  res.json({ success: true, ride: rows[0] });
+}));
+
+router.patch('/:id/complete', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
+  const { rows } = await req.db.query(`
+    UPDATE rides SET status = 'completed', completed_at = now()
+    WHERE id = $1 AND driver_id = $2 AND status = 'in_progress'
+    RETURNING *
+  `, [req.params.id, req.driver.id]);
+
+  if (!rows[0]) return res.status(404).json({ error: 'Corrida não encontrada ou em outro status.' });
+  res.json({ success: true, ride: rows[0] });
+}));
+
+router.patch('/:id/cancel', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
+  const { rows } = await req.db.query(`
+    UPDATE rides SET status = 'cancelled'
+    WHERE id = $1 AND driver_id = $2 AND status IN ('requested', 'accepted', 'in_progress')
+    RETURNING *
+  `, [req.params.id, req.driver.id]);
+
+  if (!rows[0]) return res.status(404).json({ error: 'Corrida não encontrada ou já finalizada.' });
+  res.json({ success: true, ride: rows[0] });
 }));
 
 // Registrar uma corrida realizada

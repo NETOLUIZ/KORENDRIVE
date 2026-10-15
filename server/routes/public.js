@@ -38,4 +38,55 @@ router.get('/driver/:slug', withDbContext, asyncHandler(async (req, res) => {
   });
 }));
 
+// Passageiro solicita a corrida pelo Link Direto — cria o pedido no sistema
+// (aparece pro motorista aceitar no Cockpit) além da mensagem de WhatsApp
+// que a própria tela já monta no navegador do passageiro.
+router.post('/driver/:slug/request-ride', withDbContext, asyncHandler(async (req, res) => {
+  // Mesmo escape usado no GET acima — só dá pra inserir a corrida se o
+  // motorista do slug estiver aprovado e com o link compartilhável ligado
+  // (ver política rides_public_insert em schema.sql, que reexige isso).
+  await req.db.query("SELECT set_config('app.bypass_public_rls', 'true', true)");
+
+  const { rows: driverRows } = await req.db.query(
+    'SELECT id FROM drivers WHERE public_slug = $1', [req.params.slug]
+  );
+  const driver = driverRows[0];
+  if (!driver) {
+    return res.status(404).json({ error: 'Motorista não encontrado' });
+  }
+
+  const {
+    passenger_name, passenger_phone, origin, destination,
+    origin_lat, origin_lng, destination_lat, destination_lng,
+    distance_km, duration_min, fare, notes
+  } = req.body;
+
+  if (!passenger_name || !origin || !destination || !fare) {
+    return res.status(400).json({ error: 'Dados incompletos' });
+  }
+
+  const now = new Date();
+  const formattedDate = `Hoje, ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  // Sem RETURNING de propósito: não existe (nem deve existir) política de
+  // SELECT em rides pro passageiro anônimo — ele só tem acesso de escrita
+  // (INSERT), nunca de leitura. RETURNING exigiria conseguir reler a própria
+  // linha inserida, o que violaria RLS mesmo com o INSERT em si sendo válido.
+  await req.db.query(`
+    INSERT INTO rides (
+      driver_id, passenger_name, passenger_phone, origin, destination,
+      origin_lat, origin_lng, destination_lat, destination_lng,
+      distance_km, duration_min, fare, status, date_time, notes
+    )
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'requested',$13,$14)
+  `, [
+    driver.id, passenger_name, passenger_phone || '', origin, destination,
+    origin_lat || null, origin_lng || null, destination_lat || null, destination_lng || null,
+    parseFloat(distance_km) || 0, parseInt(duration_min) || 0, parseFloat(fare),
+    formattedDate, notes || ''
+  ]);
+
+  res.json({ success: true });
+}));
+
 export default router;

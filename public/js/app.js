@@ -27,7 +27,11 @@ const state = {
   expenses: [],
   metrics: null,
   rides: [],
-  selectedFuel: 'Flex'
+  selectedFuel: 'Flex',
+  pendingRides: [],
+  // "Cheguei ao local" é só um toggle de tela — não existe rastreamento de
+  // GPS real pra detectar chegada, então o próprio motorista confirma.
+  arrivedRideIds: new Set()
 };
 
 // Expor funções globais para os handlers inline do HTML
@@ -59,6 +63,13 @@ window.handleExportData = handleExportData;
 window.openDeleteAccountModal = openDeleteAccountModal;
 window.closeDeleteAccountModal = closeDeleteAccountModal;
 window.handleConfirmDeleteAccount = handleConfirmDeleteAccount;
+window.recenterDemandMap = recenterDemandMap;
+window.handleAcceptRide = handleAcceptRide;
+window.handleRejectRide = handleRejectRide;
+window.handleMarkArrived = handleMarkArrived;
+window.handleStartRide = handleStartRide;
+window.handleCompleteRide = handleCompleteRide;
+window.openWazeNavigation = openWazeNavigation;
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', async () => {
@@ -80,7 +91,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (ok) {
       const screen = decidePostAuthScreen(state.driver);
       navigateTo(screen);
-      if (screen === 'cockpit') initDemandMap();
+      if (screen === 'cockpit') {
+        initDemandMap();
+        startPendingRidesPolling();
+      }
       return;
     }
   }
@@ -88,15 +102,40 @@ document.addEventListener('DOMContentLoaded', async () => {
   navigateTo('login');
 });
 
-// Centralizar o mapa real (Google Maps) na localização do motorista
+let demandMap;
+let demandMarker;
+let demandMapPosition;
+
+// Inicializa um mapa próprio para o radar, sem depender de iframe de terceiros.
 async function initDemandMap() {
-  const frame = document.getElementById('demand-map-frame');
-  if (!frame) return;
+  const mapElement = document.getElementById('demand-map');
+  if (!mapElement || !window.L) return;
 
   const fallback = { lat: -23.5613, lng: -46.6565, label: 'Você está aqui (Av. Paulista)' };
 
   function setMap(lat, lng, label) {
-    frame.src = `https://www.google.com/maps?q=${lat},${lng}&z=15&output=embed`;
+    demandMapPosition = { lat, lng };
+    if (!demandMap) {
+      demandMap = L.map('demand-map', { zoomControl: false, attributionControl: true }).setView([lat, lng], 15);
+      L.control.zoom({ position: 'bottomright' }).addTo(demandMap);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        subdomains: 'abcd',
+        maxZoom: 20,
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+      }).addTo(demandMap);
+    } else {
+      demandMap.setView([lat, lng], 15);
+    }
+
+    if (demandMarker) demandMarker.setLatLng([lat, lng]);
+    else demandMarker = L.circleMarker([lat, lng], {
+      radius: 8,
+      color: '#FFFFFF',
+      weight: 3,
+      fillColor: '#FB4F14',
+      fillOpacity: 1
+    }).addTo(demandMap);
+
     const labelEl = document.getElementById('map-you-are-here');
     if (labelEl) labelEl.textContent = '📍 ' + label;
   }
@@ -125,6 +164,128 @@ async function initDemandMap() {
     );
   } else {
     await setMapByIp();
+  }
+}
+
+function recenterDemandMap() {
+  if (demandMap && demandMapPosition) demandMap.setView([demandMapPosition.lat, demandMapPosition.lng], 15);
+}
+
+// ============================================================================
+// Pedidos de Corrida (Link Direto) — pedido do passageiro aparece aqui pro
+// motorista aceitar, navegar até a origem e iniciar a corrida. Sem push
+// (fora de escopo por enquanto): só atualiza enquanto o app está aberto,
+// via polling a cada 15s.
+// ============================================================================
+let pendingRidesPollingStarted = false;
+
+function startPendingRidesPolling() {
+  if (pendingRidesPollingStarted) return;
+  pendingRidesPollingStarted = true;
+  pollPendingRides();
+  setInterval(pollPendingRides, 15000);
+}
+
+async function pollPendingRides() {
+  try {
+    const res = await api.getPendingRides();
+    if (res.rides) {
+      state.pendingRides = res.rides;
+      renderPendingRides();
+    }
+  } catch (err) {
+    console.error('Erro ao buscar pedidos de corrida:', err);
+  }
+}
+
+function renderPendingRides() {
+  const card = document.getElementById('pending-rides-card');
+  const listEl = document.getElementById('pending-rides-list');
+  if (!card || !listEl) return;
+
+  if (state.pendingRides.length === 0) {
+    card.classList.add('hidden');
+    listEl.innerHTML = '';
+    return;
+  }
+  card.classList.remove('hidden');
+
+  listEl.innerHTML = state.pendingRides.map(r => {
+    const hasOriginCoords = r.origin_lat != null && r.origin_lng != null;
+    const arrived = state.arrivedRideIds.has(r.id);
+
+    let actions = '';
+    if (r.status === 'requested') {
+      actions = `
+        <button onclick="handleRejectRide(${r.id})" class="flex-1 py-2 rounded-lg border border-surface-border text-slate-400 text-xs font-semibold">Recusar</button>
+        <button onclick="handleAcceptRide(${r.id})" class="flex-1 py-2 rounded-lg bg-brand text-black text-xs font-bold">Aceitar</button>
+      `;
+    } else if (r.status === 'accepted' && !arrived) {
+      actions = `
+        ${hasOriginCoords ? `<button onclick="openWazeNavigation(${r.origin_lat}, ${r.origin_lng})" class="flex-1 py-2 rounded-lg border border-brand text-brand text-xs font-bold flex items-center justify-center gap-1"><span class="material-symbols-outlined text-sm">near_me</span>Navegar</button>` : ''}
+        <button onclick="handleMarkArrived(${r.id})" class="flex-1 py-2 rounded-lg bg-brand text-black text-xs font-bold">Cheguei ao local</button>
+      `;
+    } else if (r.status === 'accepted' && arrived) {
+      actions = `
+        <button onclick="handleRejectRide(${r.id})" class="flex-1 py-2 rounded-lg border border-surface-border text-slate-400 text-xs font-semibold">Cancelar</button>
+        <button onclick="handleStartRide(${r.id})" class="flex-1 py-2 rounded-lg bg-brand text-black text-xs font-bold">Iniciar Corrida</button>
+      `;
+    } else if (r.status === 'in_progress') {
+      actions = `<button onclick="handleCompleteRide(${r.id})" class="w-full py-2 rounded-lg bg-brand text-black text-xs font-bold">Finalizar Corrida</button>`;
+    }
+
+    return `
+      <div class="p-3 rounded-xl bg-surface-subtle border border-surface-border space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-white">${r.passenger_name}</span>
+          <span class="text-xs font-extrabold text-brand">R$ ${Number(r.fare).toFixed(2).replace('.', ',')}</span>
+        </div>
+        <div class="text-[10px] text-slate-400 flex flex-col gap-0.5">
+          <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span><span>${r.origin}</span></div>
+          <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-brand"></span><span>${r.destination}</span></div>
+        </div>
+        <div class="flex gap-2 pt-1">${actions}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openWazeNavigation(lat, lng) {
+  window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank');
+}
+
+async function handleAcceptRide(id) {
+  const res = await api.acceptRide(id);
+  if (res.success) { showToast('Corrida aceita!'); pollPendingRides(); }
+  else showToast(res.error || 'Erro ao aceitar corrida.');
+}
+
+async function handleRejectRide(id) {
+  const res = await api.cancelRide(id);
+  if (res.success) { showToast('Pedido recusado.'); state.arrivedRideIds.delete(id); pollPendingRides(); }
+  else showToast(res.error || 'Erro ao recusar pedido.');
+}
+
+function handleMarkArrived(id) {
+  state.arrivedRideIds.add(id);
+  renderPendingRides();
+}
+
+async function handleStartRide(id) {
+  const res = await api.startRide(id);
+  if (res.success) { showToast('Corrida iniciada!'); pollPendingRides(); }
+  else showToast(res.error || 'Erro ao iniciar corrida.');
+}
+
+async function handleCompleteRide(id) {
+  const res = await api.completeRide(id);
+  if (res.success) {
+    showToast('Corrida finalizada!');
+    state.arrivedRideIds.delete(id);
+    pollPendingRides();
+    loadWeekSummary();
+  } else {
+    showToast(res.error || 'Erro ao finalizar corrida.');
   }
 }
 
@@ -418,7 +579,7 @@ async function handleLoginSubmit(event) {
       await loadInitialData();
       const screen = decidePostAuthScreen(state.driver);
       navigateTo(screen);
-      if (screen === 'cockpit') initDemandMap();
+      if (screen === 'cockpit') { initDemandMap(); startPendingRidesPolling(); }
     } else {
       showToast(res.error || 'Credenciais inválidas.');
     }
@@ -691,7 +852,7 @@ async function handleRegisterStep2(event) {
       await loadInitialData();
       const screen = decidePostAuthScreen(state.driver);
       navigateTo(screen);
-      if (screen === 'cockpit') initDemandMap();
+      if (screen === 'cockpit') { initDemandMap(); startPendingRidesPolling(); }
     } else {
       const errorMsg = (vehRes && vehRes.error) ? vehRes.error : 'Erro ao cadastrar veículo.';
       showRegisterError(errorEl, errorMsg);

@@ -145,6 +145,23 @@ CREATE TABLE IF NOT EXISTS rides (
 CREATE INDEX IF NOT EXISTS idx_rides_driver_id ON rides(driver_id);
 CREATE INDEX IF NOT EXISTS idx_rides_driver_created ON rides(driver_id, created_at);
 
+-- Ciclo de vida real da corrida (pedido do passageiro → aceite → em
+-- andamento → concluída), além do log manual que já existia. Coordenadas
+-- servem pro botão de navegação (Waze) usar a origem exata escolhida.
+ALTER TABLE rides ADD COLUMN IF NOT EXISTS origin_lat NUMERIC(10,7);
+ALTER TABLE rides ADD COLUMN IF NOT EXISTS origin_lng NUMERIC(10,7);
+ALTER TABLE rides ADD COLUMN IF NOT EXISTS destination_lat NUMERIC(10,7);
+ALTER TABLE rides ADD COLUMN IF NOT EXISTS destination_lng NUMERIC(10,7);
+ALTER TABLE rides ADD COLUMN IF NOT EXISTS accepted_at TIMESTAMPTZ;
+ALTER TABLE rides ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;
+ALTER TABLE rides ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;
+
+-- 'accepted' é o estado entre "pedido recebido" e "corrida em andamento" —
+-- motorista já confirmou mas ainda não apertou Iniciar Corrida.
+ALTER TABLE rides DROP CONSTRAINT IF EXISTS rides_status_check;
+ALTER TABLE rides ADD CONSTRAINT rides_status_check
+  CHECK (status IN ('requested', 'accepted', 'in_progress', 'completed', 'cancelled'));
+
 -- Uma tabela de sessão só, serve motorista e admin/super admin (CHECK garante que é sempre só um dono)
 CREATE TABLE IF NOT EXISTS sessions (
   token TEXT PRIMARY KEY,
@@ -263,3 +280,17 @@ CREATE POLICY expenses_self ON expenses FOR ALL
 DROP POLICY IF EXISTS rides_self ON rides;
 CREATE POLICY rides_self ON rides FOR ALL
   USING (driver_id = NULLIF(current_setting('app.current_driver_id', true), '')::int);
+
+-- Passageiro (anônimo) solicitando corrida pelo link público — mesma lógica
+-- de bypass + condição de negócio já usada em drivers_public_link, pra
+-- garantir que só dá pra criar pedido pra motorista aprovado e com o link
+-- compartilhável ligado (nunca pra motorista pendente/rejeitado/oculto).
+DROP POLICY IF EXISTS rides_public_insert ON rides;
+CREATE POLICY rides_public_insert ON rides FOR INSERT
+  WITH CHECK (
+    current_setting('app.bypass_public_rls', true) = 'true'
+    AND driver_id IN (
+      SELECT id FROM drivers
+      WHERE public_slug IS NOT NULL AND can_share_direct_link = true AND approval_status = 'approved'
+    )
+  );

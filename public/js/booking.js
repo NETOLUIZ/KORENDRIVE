@@ -377,6 +377,7 @@ function updateEstimate() {
   let total = state.rates.base_fare + (km * state.rates.km_rate) + (min * state.rates.minute_rate);
   if (total < state.rates.min_fare) total = state.rates.min_fare;
 
+  state.estimateValue = total;
   document.getElementById('booking-estimate').textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
 }
 
@@ -396,7 +397,38 @@ function buildMapsRouteUrl(origin, stops, destination) {
   return `https://www.google.com/maps/dir/?${params.toString()}`;
 }
 
-function handleBookingSubmit(event) {
+// Cria o pedido no sistema (aparece pro motorista aceitar no Cockpit) além
+// da mensagem de WhatsApp que esta tela já monta. Nunca trava o passageiro
+// por causa de uma falha de rede aqui — o WhatsApp abre de qualquer jeito.
+async function submitRideRequest({ name, phone, origin, destination, km, min, notes }) {
+  const originCoords = state.coordsByInputId['booking-origin'];
+  const destCoords = state.coordsByInputId['booking-destination'];
+
+  try {
+    await fetch(`/api/public/driver/${encodeURIComponent(state.slug)}/request-ride`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        passenger_name: name,
+        passenger_phone: phone,
+        origin,
+        destination,
+        origin_lat: originCoords?.lat ?? null,
+        origin_lng: originCoords?.lon ?? null,
+        destination_lat: destCoords?.lat ?? null,
+        destination_lng: destCoords?.lon ?? null,
+        distance_km: km,
+        duration_min: min,
+        fare: state.estimateValue || 0,
+        notes
+      })
+    });
+  } catch (err) {
+    console.error('Erro ao registrar pedido de corrida:', err);
+  }
+}
+
+async function handleBookingSubmit(event) {
   event.preventDefault();
 
   const name = document.getElementById('booking-name').value;
@@ -408,6 +440,8 @@ function handleBookingSubmit(event) {
   const min = document.getElementById('booking-duration').value;
   const notes = document.getElementById('booking-notes').value;
   const estimate = document.getElementById('booking-estimate').textContent;
+
+  await submitRideRequest({ name, phone, origin, destination, km, min, notes });
 
   const serviceLabel = serviceLabels[state.serviceType];
 

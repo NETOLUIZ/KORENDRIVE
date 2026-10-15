@@ -201,6 +201,34 @@ body input:focus, body select:focus, body textarea:focus {
 body button:focus-visible, body a:focus-visible { outline: 2px solid #FB4F14; outline-offset: 2px; }
 body .glow-brand, body .glow-brand-sm { box-shadow: 0 6px 20px rgba(251, 79, 20, .12); }
 
+/* Radar de demanda: cartografia clara e controles legíveis em tela pequena. */
+.demand-map {
+  background: #EDE7D8;
+}
+
+.demand-map .leaflet-tile-pane {
+  filter: saturate(.78) sepia(.08) brightness(1.04);
+}
+
+.demand-map .leaflet-control-zoom {
+  border: 0;
+  box-shadow: 0 2px 8px rgba(17, 17, 17, .18);
+}
+
+.demand-map .leaflet-control-zoom a {
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  color: #3E3A34;
+  border-color: #E2DDD1;
+}
+
+.demand-map .leaflet-control-attribution {
+  font-size: 8px;
+  background: rgba(249, 248, 239, .8);
+  color: #5F5A53;
+}
+
 /* Animations */
 .fade-in {
   animation: fadeIn 0.25s ease-out forwards;

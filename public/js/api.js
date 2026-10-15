@@ -141,6 +141,26 @@ export const api = {
     return authFetch('/rides/simulate', { method: 'POST', body: JSON.stringify({ distance_km: km, duration_min: min }) });
   },
 
+  async getPendingRides() {
+    return authFetch('/rides/pending');
+  },
+
+  async acceptRide(id) {
+    return authFetch(`/rides/${id}/accept`, { method: 'PATCH' });
+  },
+
+  async startRide(id) {
+    return authFetch(`/rides/${id}/start`, { method: 'PATCH' });
+  },
+
+  async completeRide(id) {
+    return authFetch(`/rides/${id}/complete`, { method: 'PATCH' });
+  },
+
+  async cancelRide(id) {
+    return authFetch(`/rides/${id}/cancel`, { method: 'PATCH' });
+  },
+
   // Direito de acesso (LGPD): baixa um arquivo de verdade, não só o JSON em memória
   async exportData() {
     const res = await fetch(`${API_BASE}/driver/export-data`, {
