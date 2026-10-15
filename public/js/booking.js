@@ -221,6 +221,12 @@ function selectServiceType(type) {
 // coordenada — ou seja, foram escolhidos da lista de sugestões, não só
 // digitados. Preenche os campos de km/min automaticamente em vez do
 // passageiro ter que chutar esses valores.
+//
+// O OSRM calcula em fluxo livre, sem trânsito em tempo real — comparado ao
+// Waze/Google (que têm trânsito ao vivo), ele tende a subestimar bastante o
+// tempo, principalmente em horário de pico. Essa margem compensa isso; não é
+// trânsito de verdade, só uma correção pra não ficar tão otimista.
+const TRAFFIC_BUFFER_MULTIPLIER = 1.3;
 let routeRequestSeq = 0;
 
 async function calculateRoute() {
@@ -266,14 +272,14 @@ async function calculateRoute() {
     }
 
     const km = data.routes[0].distance / 1000;
-    const min = data.routes[0].duration / 60;
+    const min = (data.routes[0].duration / 60) * TRAFFIC_BUFFER_MULTIPLIER;
 
     document.getElementById('booking-distance').value = km.toFixed(1);
     document.getElementById('booking-duration').value = Math.round(min);
     updateEstimate();
 
     if (statusEl) {
-      statusEl.textContent = `Calculado pela rota real: ${km.toFixed(1)} km, ${Math.round(min)} min.`;
+      statusEl.textContent = `Calculado pela rota real: ${km.toFixed(1)} km, ${Math.round(min)} min (já com margem de trânsito — sem dados de trânsito ao vivo).`;
       statusEl.classList.remove('text-red-400');
     }
   } catch (err) {
