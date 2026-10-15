@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
   <title>korenDriver - Solicitar Corrida</title>
 
   <!-- Tailwind CSS via CDN -->
@@ -16,9 +16,11 @@
   <!-- Google Material Symbols -->
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
 
-  <!-- Leaflet (mapa com tiles do OpenStreetMap) — gratuito, sem chave de API -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- MapLibre GL JS + OpenFreeMap (estilo "Positron": ruas claras, fundo
+       creme, água azul suave) — gratuito pra sempre, sem chave, sem limite.
+       tile.openstreetmap.org bloqueou por uso pesado e o CartoDB passou a
+       exigir chave; OpenFreeMap foi criado justamente pra resolver isso. -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.14.0/dist/maplibre-gl.css" />
 
   <!-- Tailwind Theme Configuration -->
   <script>
@@ -60,32 +62,31 @@
 
   <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="bg-surface-main text-slate-100 min-h-screen flex flex-col items-center justify-start selection:bg-brand selection:text-black">
+<body class="bg-surface-main text-slate-100 min-h-screen selection:bg-brand selection:text-black overflow-x-hidden">
 
-  <main class="w-full max-w-md px-4 py-6 space-y-4">
+  <!-- Estado: Carregando -->
+  <div id="view-loading" class="min-h-screen flex flex-col items-center justify-center gap-3">
+    <div class="w-10 h-10 border-4 border-slate-700 border-t-brand rounded-full animate-spin"></div>
+    <p class="text-xs text-slate-400">Carregando dados do motorista...</p>
+  </div>
 
-    <!-- Estado: Carregando -->
-    <div id="view-loading" class="flex flex-col items-center justify-center py-24 gap-3">
-      <div class="w-10 h-10 border-4 border-slate-700 border-t-brand rounded-full animate-spin"></div>
-      <p class="text-xs text-slate-400">Carregando dados do motorista...</p>
+  <!-- Estado: Erro / Link inválido -->
+  <div id="view-error" class="hidden min-h-screen flex-col items-center justify-center gap-3 text-center px-4">
+    <div class="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+      <span class="material-symbols-outlined text-red-400 text-3xl">link_off</span>
     </div>
+    <h2 class="text-base font-display font-bold text-white">Link inválido</h2>
+    <p class="text-xs text-slate-400 max-w-xs">Este link de corrida particular não existe ou não está mais ativo. Confira com o motorista.</p>
+  </div>
 
-    <!-- Estado: Erro / Link inválido -->
-    <div id="view-error" class="hidden flex-col items-center justify-center py-24 gap-3 text-center">
-      <div class="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center">
-        <span class="material-symbols-outlined text-red-400 text-3xl">link_off</span>
-      </div>
-      <h2 class="text-base font-display font-bold text-white">Link inválido</h2>
-      <p class="text-xs text-slate-400 max-w-xs">Este link de corrida particular não existe ou não está mais ativo. Confira com o motorista.</p>
-    </div>
+  <!-- Estado: Fluxo de solicitação em 3 etapas -->
+  <div id="view-form" class="hidden">
 
-    <!-- Estado: Formulário de Solicitação -->
-    <div id="view-form" class="hidden space-y-4 fade-in">
-
-      <!-- Cabeçalho do motorista -->
-      <div class="bg-gradient-to-br from-surface-card to-[#F9F8EF] p-4 rounded-2xl border border-surface-border">
+    <!-- ===== ETAPA 1: Para onde? ===== -->
+    <div id="step-1" class="hidden w-full max-w-md mx-auto px-4 py-6 space-y-4 fade-in">
+      <div class="bg-gradient-to-br from-surface-card to-[#F9F8EF] p-4 rounded-xl border border-surface-border">
         <div class="flex items-center gap-3">
-          <div class="w-14 h-14 rounded-2xl bg-brand/15 border border-brand/40 flex items-center justify-center text-brand shrink-0">
+          <div class="w-14 h-14 rounded-xl bg-brand/15 border border-brand/40 flex items-center justify-center text-brand shrink-0">
             <span class="material-symbols-outlined text-3xl">account_circle</span>
           </div>
           <div class="min-w-0">
@@ -119,8 +120,114 @@
         </button>
       </div>
 
-      <!-- Formulário -->
-      <form id="form-booking" onsubmit="handleBookingSubmit(event)" class="bg-surface-card p-4 rounded-2xl border border-surface-border space-y-3">
+      <!-- Campo "Para onde?" — só navega pra Etapa 2, não digita aqui -->
+      <button type="button" onclick="showScreen('step-2')" class="w-full flex items-center gap-3 bg-surface-card border border-surface-border rounded-xl px-4 py-4 shadow-sm text-left hover:border-brand/50 transition">
+        <span class="material-symbols-outlined text-brand text-2xl shrink-0">search</span>
+        <span class="text-sm font-semibold text-slate-400">Para onde?</span>
+      </button>
+
+      <p class="text-center text-[10px] text-slate-500">Powered by <span class="text-brand font-semibold">korenDriver</span></p>
+    </div>
+
+    <!-- ===== ETAPA 2: Mapa — Origem e Destino ===== -->
+    <div id="step-2" class="hidden fixed inset-0 z-40 bg-surface-subtle">
+      <div id="route-map" class="absolute inset-0"></div>
+
+      <!-- Painel flutuante: voltar + origem/destino -->
+      <div class="absolute top-0 left-0 right-0 z-[1000] p-3 space-y-2 pointer-events-none">
+        <button type="button" onclick="showScreen('step-1')" class="pointer-events-auto w-9 h-9 rounded-xl bg-white shadow-md border border-surface-border flex items-center justify-center text-slate-600">
+          <span class="material-symbols-outlined text-lg">arrow_back</span>
+        </button>
+
+        <div class="pointer-events-auto bg-white rounded-xl shadow-lg border border-surface-border p-3 space-y-2">
+          <div class="relative flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+            <input id="booking-origin" type="text" autocomplete="off" placeholder="Sua localização atual" class="flex-1 min-w-0 bg-transparent text-sm text-slate-800 placeholder-slate-400 outline-none">
+            <input id="booking-origin-number" type="text" inputmode="numeric" placeholder="Nº" class="w-11 shrink-0 bg-surface-subtle rounded-lg px-1.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none text-center">
+            <button type="button" onclick="requestCurrentLocationAsOrigin()" title="Usar minha localização atual" class="shrink-0 w-7 h-7 rounded-lg bg-surface-subtle flex items-center justify-center text-brand">
+              <span class="material-symbols-outlined text-base">my_location</span>
+            </button>
+            <div id="booking-origin-suggestions" class="hidden absolute z-[1100] left-0 right-0 top-full mt-1 bg-white border border-surface-border rounded-xl overflow-hidden shadow-lg"></div>
+          </div>
+
+          <div class="h-px bg-surface-border ml-[18px]"></div>
+
+          <div class="relative flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-sm bg-red-500 shrink-0"></span>
+            <input id="booking-destination" type="text" required autocomplete="off" placeholder="Para onde você vai?" class="flex-1 min-w-0 bg-transparent text-sm text-slate-800 placeholder-slate-400 outline-none">
+            <input id="booking-destination-number" type="text" inputmode="numeric" placeholder="Nº" class="w-11 shrink-0 bg-surface-subtle rounded-lg px-1.5 py-1 text-xs text-slate-800 placeholder-slate-400 outline-none text-center">
+            <div id="booking-destination-suggestions" class="hidden absolute z-[1100] left-0 right-0 top-full mt-1 bg-white border border-surface-border rounded-xl overflow-hidden shadow-lg"></div>
+          </div>
+          <p class="text-[10px] text-slate-400 pl-[18px]">Preencha o "Nº" se o endereço encontrado não tiver o número da casa.</p>
+        </div>
+
+        <!-- Paradas intermediárias (opcional, secundário) -->
+        <div id="booking-stops-list" class="pointer-events-auto space-y-2"></div>
+        <button type="button" onclick="addStop()" class="pointer-events-auto text-[11px] font-semibold text-slate-600 bg-white/90 px-2.5 py-1.5 rounded-lg shadow border border-surface-border flex items-center gap-1 w-fit">
+          <span class="material-symbols-outlined text-sm">add_circle</span>
+          Adicionar parada
+        </button>
+
+        <p id="route-status" class="hidden pointer-events-auto text-[10px] text-slate-600 bg-white/90 px-2.5 py-1.5 rounded-lg shadow border border-surface-border"></p>
+      </div>
+
+      <!-- Barra inferior: continuar -->
+      <div class="absolute bottom-0 left-0 right-0 z-[1000] p-3 bg-gradient-to-t from-white via-white/95 to-transparent pt-6">
+        <button type="button" id="btn-continue-step2" onclick="goToReview()" disabled class="w-full py-3.5 rounded-xl bg-brand disabled:bg-slate-300 disabled:cursor-not-allowed text-black font-display font-bold text-sm transition">
+          Continuar
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== ETAPA 3: Revisão e solicitação ===== -->
+    <div id="step-3" class="hidden w-full max-w-md mx-auto px-4 py-6 space-y-4 fade-in">
+      <button type="button" onclick="showScreen('step-2')" class="flex items-center gap-1 text-xs text-slate-400 hover:text-white">
+        <span class="material-symbols-outlined text-sm">arrow_back</span> Voltar ao mapa
+      </button>
+
+      <!-- Endereços -->
+      <div class="bg-surface-card border border-surface-border rounded-xl p-4 space-y-3">
+        <div class="flex items-start gap-2.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1 shrink-0"></span>
+          <p id="review-origin-text" class="text-sm text-white flex-1">-</p>
+        </div>
+        <div class="h-px bg-surface-border ml-[5px]"></div>
+        <div class="flex items-start gap-2.5">
+          <span class="w-2.5 h-2.5 rounded-sm bg-red-500 mt-1 shrink-0"></span>
+          <p id="review-destination-text" class="text-sm text-white flex-1">-</p>
+        </div>
+      </div>
+
+      <!-- Distância e tempo -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-surface-card border border-surface-border rounded-xl p-3 text-center">
+          <p class="text-[10px] text-slate-400">Distância</p>
+          <p id="review-distance" class="text-lg font-display font-bold text-white mt-0.5">-</p>
+        </div>
+        <div class="bg-surface-card border border-surface-border rounded-xl p-3 text-center">
+          <p class="text-[10px] text-slate-400">Tempo estimado</p>
+          <p id="review-duration" class="text-lg font-display font-bold text-white mt-0.5">-</p>
+        </div>
+      </div>
+      <p class="text-[10px] text-amber-600 bg-amber-500/10 border border-amber-500/30 rounded-lg px-2.5 py-1.5 flex items-start gap-1.5">
+        <span class="material-symbols-outlined text-xs mt-0.5">info</span>
+        O tempo real da corrida pode variar de acordo com o trânsito no momento.
+      </p>
+
+      <!-- Valor estimado (vem da tarifa real do motorista, nunca inventado aqui) -->
+      <div class="bg-brand/10 border border-brand/30 rounded-xl p-3.5 flex items-center justify-between">
+        <div>
+          <p class="text-[10px] text-slate-300">Valor Estimado</p>
+          <p id="booking-estimate" class="text-xl font-display font-extrabold text-brand">R$ 0,00</p>
+        </div>
+        <span class="material-symbols-outlined text-brand text-2xl">payments</span>
+      </div>
+
+      <!-- Campos ocultos: guardam km/min calculados pela rota real (OSRM) -->
+      <input type="hidden" id="booking-distance" value="5">
+      <input type="hidden" id="booking-duration" value="15">
+
+      <form id="form-booking" onsubmit="handleBookingSubmit(event)" class="bg-surface-card p-4 rounded-xl border border-surface-border space-y-3">
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1">Seu Nome</label>
           <input id="booking-name" type="text" required placeholder="Nome completo" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
@@ -131,69 +238,28 @@
           <input id="booking-phone" type="text" required placeholder="(11) 91234-5678" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
         </div>
 
-        <div class="relative">
-          <label class="block text-xs font-medium text-slate-300 mb-1">Origem</label>
-          <input id="booking-origin" type="text" required autocomplete="off" placeholder="Ex: Rua Silva Paulet, 100 - Aldeota, Fortaleza - CE" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
-          <div id="booking-origin-suggestions" class="hidden absolute z-20 left-0 right-0 mt-1 bg-surface-card border border-surface-border rounded-xl overflow-hidden shadow-lg"></div>
-          <p class="text-[10px] text-slate-500 mt-1">Comece a digitar e escolha um endereço na lista de sugestões.</p>
-        </div>
-
-        <!-- Paradas intermediárias (adicionadas dinamicamente) -->
-        <div id="booking-stops-list" class="space-y-2"></div>
-
-        <button type="button" onclick="addStop()" class="w-full py-2 rounded-xl border border-dashed border-surface-border text-slate-400 hover:text-brand hover:border-brand/50 text-xs font-semibold flex items-center justify-center gap-1.5 transition">
-          <span class="material-symbols-outlined text-base">add_circle</span>
-          Adicionar Parada
-        </button>
-
-        <div class="relative">
-          <label class="block text-xs font-medium text-slate-300 mb-1">Destino</label>
-          <input id="booking-destination" type="text" required autocomplete="off" placeholder="Ex: Av. Beira Mar, 500 - Meireles, Fortaleza - CE" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
-          <div id="booking-destination-suggestions" class="hidden absolute z-20 left-0 right-0 mt-1 bg-surface-card border border-surface-border rounded-xl overflow-hidden shadow-lg"></div>
-          <p class="text-[10px] text-slate-500 mt-1">Comece a digitar e escolha um endereço na lista de sugestões.</p>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Distância aprox. (km)</label>
-            <input id="booking-distance" type="number" step="0.1" min="0" value="5" readonly class="w-full bg-surface-main border border-surface-border rounded-xl px-3.5 py-2.5 text-sm text-slate-300 outline-none cursor-not-allowed">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Tempo aprox. (min)</label>
-            <input id="booking-duration" type="number" min="0" value="15" readonly class="w-full bg-surface-main border border-surface-border rounded-xl px-3.5 py-2.5 text-sm text-slate-300 outline-none cursor-not-allowed">
-          </div>
-        </div>
-        <p id="route-status" class="hidden text-[10px] text-slate-500 -mt-1">Escolha origem e destino na lista de sugestões pra calcular a rota automaticamente.</p>
-        <p class="text-[10px] text-amber-600 bg-amber-500/10 border border-amber-500/30 rounded-lg px-2.5 py-1.5 flex items-start gap-1.5 -mt-1">
-          <span class="material-symbols-outlined text-xs mt-0.5">info</span>
-          Km e tempo são calculados automaticamente pela rota e não podem ser editados. O tempo real da corrida pode variar de acordo com o trânsito no momento.
-        </p>
-
-        <div id="route-map" class="h-48 rounded-xl border border-surface-border overflow-hidden bg-surface-subtle"></div>
-
         <div>
           <label id="booking-notes-label" class="block text-xs font-medium text-slate-300 mb-1">Observação (opcional)</label>
           <textarea id="booking-notes" rows="2" placeholder="Detalhes extras" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none resize-none"></textarea>
         </div>
 
-        <!-- Estimativa -->
-        <div class="bg-brand/10 border border-brand/30 rounded-xl p-3.5 flex items-center justify-between">
-          <div>
-            <p class="text-[10px] text-slate-300">Valor Estimado</p>
-            <p id="booking-estimate" class="text-xl font-display font-extrabold text-brand">R$ 0,00</p>
-          </div>
-          <span class="material-symbols-outlined text-brand text-2xl">payments</span>
-        </div>
-
-        <button type="submit" class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-display font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition active:scale-95">
-          <span class="material-symbols-outlined text-lg">chat</span>
-          Solicitar via WhatsApp
+        <button type="submit" id="btn-submit-request" class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-display font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition active:scale-95 disabled:opacity-60">
+          <span id="btn-submit-icon" class="material-symbols-outlined text-lg">chat</span>
+          <span id="btn-submit-label">Solicitar Corrida</span>
         </button>
+        <p id="submit-error" class="hidden text-[11px] text-red-500 bg-red-500/10 border border-red-500/30 rounded-lg px-2.5 py-1.5"></p>
       </form>
-
-      <p class="text-center text-[10px] text-slate-500">Powered by <span class="text-brand font-semibold">korenDriver</span></p>
     </div>
-  </main>
+
+    <!-- ===== Confirmação de sucesso ===== -->
+    <div id="step-success" class="hidden w-full max-w-md mx-auto px-4 py-16 space-y-3 text-center fade-in">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
+        <span class="material-symbols-outlined text-emerald-500 text-4xl">check_circle</span>
+      </div>
+      <h2 class="text-lg font-display font-bold text-white">Pedido enviado!</h2>
+      <p class="text-xs text-slate-400 max-w-xs mx-auto">O motorista foi avisado e vai confirmar com você pelo WhatsApp.</p>
+    </div>
+  </div>
 
   <style>
     .service-btn { background: #FFFFFF; border-color: #D9D7CF; color: #176B45; }

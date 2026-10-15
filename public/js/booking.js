@@ -1,3 +1,5 @@
+import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.14.0/dist/maplibre-gl.mjs';
+
 const state = {
   slug: null,
   driver: null,
@@ -6,9 +8,11 @@ const state = {
   serviceType: 'corrida',
   stopCount: 0,
   // Coordenadas (lat/lon) de cada campo de endereço, guardadas só quando o
-  // usuário escolhe uma sugestão da lista — é a partir delas que a rota real
-  // (OSRM) calcula km/min de verdade, em vez do passageiro chutar os números.
-  coordsByInputId: {}
+  // usuário escolhe uma sugestão da lista (ou usa localização/mapa) — é a
+  // partir delas que a rota real (OSRM) calcula km/min de verdade, em vez
+  // do passageiro chutar os números.
+  coordsByInputId: {},
+  geoRequested: false
 };
 
 // Muita rua pequena (loteamento, conjunto residencial) não tem o número da
@@ -46,6 +50,70 @@ window.updateEstimate = updateEstimate;
 window.handleBookingSubmit = handleBookingSubmit;
 window.addStop = addStop;
 window.removeStop = removeStop;
+window.showScreen = showScreen;
+window.goToReview = goToReview;
+window.requestCurrentLocationAsOrigin = requestCurrentLocationAsOrigin;
+
+// ============================================================================
+// Navegação entre as 3 etapas (+ tela de sucesso)
+// ============================================================================
+function showScreen(id) {
+  ['step-1', 'step-2', 'step-3', 'step-success'].forEach(s => {
+    document.getElementById(s)?.classList.toggle('hidden', s !== id);
+  });
+
+  if (id === 'step-2') {
+    // Precisa esperar o container ficar visível (não display:none) pro
+    // Leaflet calcular o tamanho certo — se inicializasse antes, nasceria
+    // com altura/largura zero e ficaria quebrado.
+    initMap();
+    if (!state.geoRequested) {
+      state.geoRequested = true;
+      requestCurrentLocationAsOrigin();
+    }
+  }
+}
+
+// O campo de endereço, depois de uma sugestão escolhida, fica com o texto
+// completo (rua, bairro, cidade, CEP, país) — editar esse texto pra tentar
+// encaixar um número dispararia uma busca nova com a string inteira, que o
+// Nominatim não reconhece mais. Por isso o número da casa vive num campo
+// separado, que nunca busca nada — só é costurado no endereço final aqui.
+function insertNumberIntoAddress(address, number) {
+  if (!number || address.includes(number)) return address;
+  const firstComma = address.indexOf(',');
+  if (firstComma === -1) return `${address}, ${number}`;
+  return `${address.slice(0, firstComma)}, ${number}${address.slice(firstComma)}`;
+}
+
+function getOriginAddress() {
+  return insertNumberIntoAddress(
+    document.getElementById('booking-origin').value,
+    document.getElementById('booking-origin-number').value.trim()
+  );
+}
+
+function getDestinationAddress() {
+  return insertNumberIntoAddress(
+    document.getElementById('booking-destination').value,
+    document.getElementById('booking-destination-number').value.trim()
+  );
+}
+
+function goToReview() {
+  document.getElementById('review-origin-text').textContent = getOriginAddress();
+  document.getElementById('review-destination-text').textContent = getDestinationAddress();
+  document.getElementById('review-distance').textContent = `${document.getElementById('booking-distance').value} km`;
+  document.getElementById('review-duration').textContent = `${document.getElementById('booking-duration').value} min`;
+  showScreen('step-3');
+}
+
+function updateContinueButtonState() {
+  const btn = document.getElementById('btn-continue-step2');
+  if (!btn) return;
+  const ready = Boolean(state.coordsByInputId['booking-origin'] && state.coordsByInputId['booking-destination']);
+  btn.disabled = !ready;
+}
 
 function addStop() {
   state.stopCount += 1;
@@ -53,15 +121,14 @@ function addStop() {
 
   const wrapper = document.createElement('div');
   wrapper.id = `stop-row-${id}`;
-  wrapper.className = 'flex items-end gap-2';
+  wrapper.className = 'pointer-events-auto flex items-end gap-2 bg-white rounded-xl shadow-lg border border-surface-border p-2';
   wrapper.innerHTML = `
     <div class="flex-1 relative">
-      <label class="block text-xs font-medium text-slate-300 mb-1">Parada</label>
-      <input id="stop-input-${id}" type="text" autocomplete="off" placeholder="Ex: Rua Major Facundo, 200 - Centro, Fortaleza - CE" class="w-full bg-surface-subtle border border-surface-border focus:border-brand rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none">
-      <div id="stop-suggestions-${id}" class="hidden absolute z-20 left-0 right-0 mt-1 bg-surface-card border border-surface-border rounded-xl overflow-hidden shadow-lg"></div>
+      <input id="stop-input-${id}" type="text" autocomplete="off" placeholder="Parada (opcional)" class="w-full bg-transparent text-sm text-slate-800 placeholder-slate-400 outline-none px-1">
+      <div id="stop-suggestions-${id}" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-surface-border rounded-xl overflow-hidden shadow-lg"></div>
     </div>
-    <button type="button" onclick="removeStop(${id})" class="w-10 h-10 shrink-0 rounded-xl bg-surface-subtle border border-surface-border text-slate-400 hover:text-red-400 hover:border-red-500/40 flex items-center justify-center">
-      <span class="material-symbols-outlined text-lg">close</span>
+    <button type="button" onclick="removeStop(${id})" class="w-7 h-7 shrink-0 rounded-lg bg-surface-subtle text-slate-400 hover:text-red-500 flex items-center justify-center">
+      <span class="material-symbols-outlined text-base">close</span>
     </button>
   `;
   document.getElementById('booking-stops-list').appendChild(wrapper);
@@ -79,13 +146,20 @@ function setupAddressAutocomplete(inputId, suggestionsId) {
   let debounceTimer = null;
   let currentController = null;
 
+  // Sem isso, tocar numa sugestão tira o foco do campo (blur) antes do clique
+  // terminar de processar, e o hideSuggestions (disparado pelo blur) some
+  // com a lista bem na hora — o clique nunca chega a registrar. Bloqueando
+  // o mousedown/touchstart na lista, o campo nunca perde o foco por causa
+  // dela, e o clique na sugestão sempre é concluído normalmente.
+  box.addEventListener('mousedown', (e) => e.preventDefault());
+
   function hideSuggestions() {
     box.classList.add('hidden');
     box.innerHTML = '';
   }
 
   function showMessage(text, isError) {
-    box.innerHTML = `<p class="px-3 py-2 text-xs ${isError ? 'text-red-400' : 'text-slate-400'}">${text}</p>`;
+    box.innerHTML = `<p class="px-3 py-2 text-xs ${isError ? 'text-red-500' : 'text-slate-500'}">${text}</p>`;
     box.classList.remove('hidden');
   }
 
@@ -117,7 +191,7 @@ function setupAddressAutocomplete(inputId, suggestionsId) {
       }
 
       box.innerHTML = results.map((r, i) => `
-        <button type="button" data-idx="${i}" class="w-full text-left px-3 py-2 text-xs text-slate-200 hover:bg-surface-subtle border-b border-surface-border last:border-b-0 flex items-start gap-2">
+        <button type="button" data-idx="${i}" class="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-surface-subtle border-b border-surface-border last:border-b-0 flex items-start gap-2">
           <span class="material-symbols-outlined text-brand text-sm mt-0.5 shrink-0">location_on</span>
           <span class="truncate">${r.display_name}</span>
         </button>
@@ -145,6 +219,7 @@ function setupAddressAutocomplete(inputId, suggestionsId) {
     // Texto mudou na mão — a coordenada guardada (se tinha) não vale mais
     // pra rota, senão calcularia com um endereço que não é mais esse.
     delete state.coordsByInputId[inputId];
+    updateContinueButtonState();
     clearTimeout(debounceTimer);
     const query = input.value.trim();
     if (query.length < 3) {
@@ -211,10 +286,7 @@ function showError() {
 function showForm() {
   document.getElementById('view-loading').classList.add('hidden');
   document.getElementById('view-form').classList.remove('hidden');
-  // Precisa esperar o container ficar visível (não display:none) pro Leaflet
-  // conseguir calcular o tamanho do mapa direito — se inicializasse antes,
-  // ele nasceria com altura/largura zero e ficaria quebrado.
-  initMap();
+  showScreen('step-1');
 }
 
 function renderDriver() {
@@ -238,65 +310,160 @@ function selectServiceType(type) {
   document.getElementById('booking-notes').placeholder = serviceNotesPlaceholder[type];
 }
 
-// Mapa com Origem/Paradas/Destino e o traçado da rota — Leaflet + tiles do
-// OpenStreetMap, gratuito e sem chave de API (mesma filosofia do resto da
-// busca de endereço/rota desta tela).
+// ============================================================================
+// Geolocalização + geocodificação reversa — gratuito, mesmo serviço
+// (Nominatim) já usado na busca de endereço por texto, só que de trás pra
+// frente: lat/lon -> endereço legível.
+// ============================================================================
+async function reverseGeocode(lat, lon) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=0`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.display_name || null;
+  } catch (err) {
+    console.error('Erro na geocodificação reversa:', err);
+    return null;
+  }
+}
+
+function setOriginFromCoords(lat, lon, label) {
+  const input = document.getElementById('booking-origin');
+  input.value = label;
+  input.placeholder = 'Sua localização atual';
+  state.coordsByInputId['booking-origin'] = { lat, lon };
+  updateContinueButtonState();
+  calculateRoute();
+}
+
+// Pedida automaticamente ao entrar na Etapa 2, e também pelo botão de mira
+// no campo Origem. Se a permissão for negada ou falhar, não trava nada — o
+// campo só fica vazio, pronto pra busca manual ou toque no mapa.
+function requestCurrentLocationAsOrigin() {
+  const input = document.getElementById('booking-origin');
+  if (!navigator.geolocation) return;
+
+  input.placeholder = 'Localizando...';
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const { latitude: lat, longitude: lon } = pos.coords;
+      if (map) map.flyTo({ center: [lon, lat], zoom: 15 });
+      const label = await reverseGeocode(lat, lon);
+      setOriginFromCoords(lat, lon, label || `${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+    },
+    () => {
+      input.placeholder = 'Digite ou toque no mapa';
+    },
+    // enableHighAccuracy pede o sensor mais preciso disponível (GPS, se
+    // existir) em vez do padrão rápido-mas-impreciso baseado em IP/Wi-Fi —
+    // em celular com GPS ligado faz diferença real; em notebook sem GPS não
+    // tem o que melhorar (a localização continua vindo por Wi-Fi/IP mesmo).
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+// ============================================================================
+// Mapa com Origem/Paradas/Destino e o traçado da rota — MapLibre GL +
+// OpenFreeMap (estilo "Positron"), gratuito pra sempre e sem chave de API.
+// Nota: MapLibre usa [longitude, latitude] (Leaflet usava [lat, lon]).
+// ============================================================================
 let map = null;
-let mapMarkers = null;
-let mapRouteLine = null;
+let mapMarkers = [];
+let mapLoaded = false;
+let pendingRouteUpdate = null; // updateRouteMap chamado antes do estilo carregar
 
 function initMap() {
-  if (map || typeof L === 'undefined') return;
+  if (map) return;
   const container = document.getElementById('route-map');
   if (!container) return;
 
-  map = L.map(container, { attributionControl: true }).setView([-3.73, -38.52], 12); // Fortaleza/CE
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-  }).addTo(map);
+  map = new maplibregl.Map({
+    container,
+    style: 'https://tiles.openfreemap.org/styles/positron',
+    center: [-38.52, -3.73], // Fortaleza/CE
+    zoom: 12
+  });
 
-  mapMarkers = L.layerGroup().addTo(map);
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
+
+  map.on('load', () => {
+    mapLoaded = true;
+    map.addSource('route-line', {
+      type: 'geojson',
+      data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [] } }
+    });
+    map.addLayer({
+      id: 'route-line-layer',
+      type: 'line',
+      source: 'route-line',
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: { 'line-color': '#FB4F14', 'line-width': 4 }
+    });
+    if (pendingRouteUpdate) {
+      const args = pendingRouteUpdate;
+      pendingRouteUpdate = null;
+      updateRouteMap(...args);
+    }
+  });
+
+  // Tocar em qualquer ponto do mapa define a Origem ali (geocodificação
+  // reversa) — é a alternativa a digitar/buscar, pedida explicitamente.
+  map.on('click', async (e) => {
+    const { lat, lng } = e.lngLat;
+    const input = document.getElementById('booking-origin');
+    input.value = 'Localizando endereço...';
+    const label = await reverseGeocode(lat, lng);
+    setOriginFromCoords(lat, lng, label || `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+  });
+}
+
+function clearMapMarkers() {
+  mapMarkers.forEach(m => m.remove());
+  mapMarkers = [];
 }
 
 function addMapPoint(coords, color) {
-  L.circleMarker([coords.lat, coords.lon], {
-    radius: 8,
-    weight: 2,
-    color: '#FFFFFF',
-    fillColor: color,
-    fillOpacity: 1
-  }).addTo(mapMarkers);
+  mapMarkers.push(new maplibregl.Marker({ color }).setLngLat([coords.lon, coords.lat]).addTo(map));
 }
 
 function updateRouteMap(originCoords, stopCoordsList, destCoords, geometryCoords) {
   if (!map) return;
-
-  mapMarkers.clearLayers();
-  if (mapRouteLine) {
-    map.removeLayer(mapRouteLine);
-    mapRouteLine = null;
+  if (!mapLoaded) {
+    pendingRouteUpdate = [originCoords, stopCoordsList, destCoords, geometryCoords];
+    return;
   }
 
+  clearMapMarkers();
   addMapPoint(originCoords, '#22C55E'); // verde = origem
   stopCoordsList.forEach(c => addMapPoint(c, '#FB4F14')); // laranja = parada
   addMapPoint(destCoords, '#EF4444'); // vermelho = destino
 
-  if (geometryCoords && geometryCoords.length) {
-    const latlngs = geometryCoords.map(([lon, lat]) => [lat, lon]);
-    mapRouteLine = L.polyline(latlngs, { color: '#FB4F14', weight: 4 }).addTo(map);
-    map.fitBounds(mapRouteLine.getBounds(), { padding: [24, 24] });
-  } else {
-    const bounds = L.latLngBounds([[originCoords.lat, originCoords.lon], [destCoords.lat, destCoords.lon]]);
-    map.fitBounds(bounds, { padding: [24, 24] });
-  }
+  // geometryCoords já vem como [lon, lat] (GeoJSON/OSRM) — formato nativo do
+  // MapLibre, sem precisar inverter como no Leaflet.
+  const lineCoords = (geometryCoords && geometryCoords.length)
+    ? geometryCoords
+    : [[originCoords.lon, originCoords.lat], [destCoords.lon, destCoords.lat]];
+
+  map.getSource('route-line').setData({
+    type: 'Feature',
+    geometry: { type: 'LineString', coordinates: lineCoords }
+  });
+
+  const lons = lineCoords.map(c => c[0]);
+  const lats = lineCoords.map(c => c[1]);
+  map.fitBounds(
+    [[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
+    { padding: { top: 180, bottom: 140, left: 40, right: 40 } }
+  );
 }
 
 // Calcula distância/tempo reais pela rota (OSRM, demo pública gratuita, sem
 // chave de API) assim que origem e destino (e paradas, se houver) tiverem
-// coordenada — ou seja, foram escolhidos da lista de sugestões, não só
-// digitados. Preenche os campos de km/min automaticamente em vez do
-// passageiro ter que chutar esses valores.
+// coordenada — ou seja, foram escolhidos da lista de sugestões, da
+// localização atual ou de um toque no mapa, não só digitados. Preenche os
+// campos de km/min automaticamente em vez do passageiro ter que chutar
+// esses valores.
 //
 // O OSRM calcula em fluxo livre, sem trânsito em tempo real — comparado ao
 // Waze/Google (que têm trânsito ao vivo), ele tende a subestimar bastante o
@@ -306,6 +473,8 @@ const TRAFFIC_BUFFER_MULTIPLIER = 1.3;
 let routeRequestSeq = 0;
 
 async function calculateRoute() {
+  updateContinueButtonState();
+
   const statusEl = document.getElementById('route-status');
   const originCoords = state.coordsByInputId['booking-origin'];
   const destCoords = state.coordsByInputId['booking-destination'];
@@ -329,7 +498,7 @@ async function calculateRoute() {
   const seq = ++routeRequestSeq;
   if (statusEl) {
     statusEl.textContent = 'Calculando rota...';
-    statusEl.classList.remove('hidden', 'text-red-400');
+    statusEl.classList.remove('hidden', 'text-red-500');
   }
 
   const points = [originCoords, ...stopCoordsList, destCoords].map(c => `${c.lon},${c.lat}`).join(';');
@@ -342,7 +511,7 @@ async function calculateRoute() {
     if (data.code !== 'Ok' || !data.routes?.[0]) {
       if (statusEl) {
         statusEl.textContent = 'Não consegui calcular a rota automaticamente. Confira o endereço escolhido ou tente novamente.';
-        statusEl.classList.add('text-red-400');
+        statusEl.classList.add('text-red-500');
       }
       return;
     }
@@ -356,15 +525,15 @@ async function calculateRoute() {
     updateRouteMap(originCoords, stopCoordsList, destCoords, data.routes[0].geometry.coordinates);
 
     if (statusEl) {
-      statusEl.textContent = `Calculado pela rota real: ${km.toFixed(1)} km, ${Math.round(min)} min (já com margem de trânsito — sem dados de trânsito ao vivo).`;
-      statusEl.classList.remove('text-red-400');
+      statusEl.textContent = `Rota calculada: ${km.toFixed(1)} km, ${Math.round(min)} min (já com margem de trânsito).`;
+      statusEl.classList.remove('text-red-500');
     }
   } catch (err) {
     if (seq !== routeRequestSeq) return;
     console.error('Erro ao calcular rota:', err);
     if (statusEl) {
       statusEl.textContent = 'Não consegui calcular a rota automaticamente. Confira o endereço escolhido ou tente novamente.';
-      statusEl.classList.add('text-red-400');
+      statusEl.classList.add('text-red-500');
     }
   }
 }
@@ -398,14 +567,15 @@ function buildMapsRouteUrl(origin, stops, destination) {
 }
 
 // Cria o pedido no sistema (aparece pro motorista aceitar no Cockpit) além
-// da mensagem de WhatsApp que esta tela já monta. Nunca trava o passageiro
-// por causa de uma falha de rede aqui — o WhatsApp abre de qualquer jeito.
+// da mensagem de WhatsApp que esta tela já monta. Devolve se deu certo pra
+// quem chamou poder avisar o passageiro — mas nunca lança erro: o WhatsApp
+// abre de qualquer jeito, mesmo que o registro no sistema falhe.
 async function submitRideRequest({ name, phone, origin, destination, km, min, notes }) {
   const originCoords = state.coordsByInputId['booking-origin'];
   const destCoords = state.coordsByInputId['booking-destination'];
 
   try {
-    await fetch(`/api/public/driver/${encodeURIComponent(state.slug)}/request-ride`, {
+    const res = await fetch(`/api/public/driver/${encodeURIComponent(state.slug)}/request-ride`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -423,8 +593,10 @@ async function submitRideRequest({ name, phone, origin, destination, km, min, no
         notes
       })
     });
+    return res.ok;
   } catch (err) {
     console.error('Erro ao registrar pedido de corrida:', err);
+    return false;
   }
 }
 
@@ -433,18 +605,28 @@ async function handleBookingSubmit(event) {
 
   const name = document.getElementById('booking-name').value;
   const phone = document.getElementById('booking-phone').value;
-  const origin = document.getElementById('booking-origin').value;
-  const destination = document.getElementById('booking-destination').value;
+  const origin = getOriginAddress();
+  const destination = getDestinationAddress();
   const stops = getStops();
   const km = document.getElementById('booking-distance').value;
   const min = document.getElementById('booking-duration').value;
   const notes = document.getElementById('booking-notes').value;
   const estimate = document.getElementById('booking-estimate').textContent;
 
-  await submitRideRequest({ name, phone, origin, destination, km, min, notes });
+  const btn = document.getElementById('btn-submit-request');
+  const icon = document.getElementById('btn-submit-icon');
+  const label = document.getElementById('btn-submit-label');
+  const errorEl = document.getElementById('submit-error');
+  errorEl.classList.add('hidden');
+  btn.disabled = true;
+  icon.innerHTML = '';
+  icon.classList.remove('material-symbols-outlined');
+  icon.classList.add('inline-block', 'w-4', 'h-4', 'border-2', 'border-black', 'border-t-transparent', 'rounded-full', 'animate-spin');
+  label.textContent = 'Enviando...';
+
+  const requestOk = await submitRideRequest({ name, phone, origin, destination, km, min, notes });
 
   const serviceLabel = serviceLabels[state.serviceType];
-
   const mapsUrl = buildMapsRouteUrl(origin, stops, destination);
 
   let message = `Olá ${state.driver.name}! Gostaria de solicitar uma *${serviceLabel}* pelo korenDriver:\n\n`;
@@ -460,4 +642,17 @@ async function handleBookingSubmit(event) {
   const driverPhone = normalizePhone(state.driver.phone);
   const url = `https://api.whatsapp.com/send?phone=${driverPhone}&text=${encodeURIComponent(message)}`;
   window.open(url, '_blank');
+
+  btn.disabled = false;
+  icon.classList.remove('inline-block', 'w-4', 'h-4', 'border-2', 'border-black', 'border-t-transparent', 'rounded-full', 'animate-spin');
+  icon.classList.add('material-symbols-outlined');
+  icon.textContent = 'chat';
+  label.textContent = 'Solicitar Corrida';
+
+  if (!requestOk) {
+    errorEl.textContent = 'Não consegui registrar o pedido no sistema, mas o WhatsApp foi aberto normalmente — combine direto com o motorista por lá.';
+    errorEl.classList.remove('hidden');
+  }
+
+  showScreen('step-success');
 }
