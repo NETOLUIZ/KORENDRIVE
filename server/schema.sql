@@ -16,6 +16,29 @@ CREATE TABLE IF NOT EXISTS admins (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS companies (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  cnpj TEXT,
+  phone TEXT NOT NULL,
+  email TEXT NOT NULL,
+  address TEXT NOT NULL,
+  plan TEXT NOT NULL,
+  monthly_fee NUMERIC(10,2) NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'blocked')),
+  admin_id INTEGER NOT NULL UNIQUE REFERENCES admins(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_companies_status ON companies(status);
+
+INSERT INTO companies (name, phone, email, address, plan, monthly_fee, status, admin_id)
+SELECT a.company_name, '', a.email, '', 'Padrão', a.monthly_fee, a.status, a.id
+FROM admins a
+WHERE a.role = 'admin'
+  AND NULLIF(BTRIM(a.company_name), '') IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM companies c WHERE c.admin_id = a.id);
+
 CREATE TABLE IF NOT EXISTS drivers (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
