@@ -86,6 +86,37 @@ export const superadminApi = {
     return { ok: res.ok, ...data };
   },
 
+  async listCompanies() {
+    const res = await authFetch('/companies');
+    const data = await res.json();
+    return { ok: res.ok, ...data };
+  },
+
+  async createCompany(payload) {
+    const res = await authFetch('/companies', { method: 'POST', body: JSON.stringify(payload) });
+    const data = await res.json();
+    return { ok: res.ok, ...data };
+  },
+
+  async getCompany(id) {
+    const res = await authFetch(`/companies/${id}`);
+    const data = await res.json();
+    return { ok: res.ok, ...data };
+  },
+
+  async updateCompany(id, payload) {
+    const res = await authFetch(`/companies/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+    const data = await res.json();
+    return { ok: res.ok, ...data };
+  },
+
+  async setCompanyStatus(id, status) {
+    const res = await authFetch(`/companies/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    const data = await res.json();
+    return { ok: res.ok, ...data };
+  },
+
+
   async getDriverDetail(driverId) {
     const res = await authFetch(`/drivers/${driverId}`);
     const data = await res.json();
