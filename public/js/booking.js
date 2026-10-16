@@ -593,10 +593,10 @@ async function submitRideRequest({ name, phone, origin, destination, km, min, no
         notes
       })
     });
-    return res.ok;
+    return res.ok ? await res.json() : null;
   } catch (err) {
     console.error('Erro ao registrar pedido de corrida:', err);
-    return false;
+    return null;
   }
 }
 
@@ -624,7 +624,7 @@ async function handleBookingSubmit(event) {
   icon.classList.add('inline-block', 'w-4', 'h-4', 'border-2', 'border-black', 'border-t-transparent', 'rounded-full', 'animate-spin');
   label.textContent = 'Enviando...';
 
-  const requestOk = await submitRideRequest({ name, phone, origin, destination, km, min, notes });
+  const requestResult = await submitRideRequest({ name, phone, origin, destination, km, min, notes });
 
   const serviceLabel = serviceLabels[state.serviceType];
   const mapsUrl = buildMapsRouteUrl(origin, stops, destination);
@@ -649,10 +649,11 @@ async function handleBookingSubmit(event) {
   icon.textContent = 'chat';
   label.textContent = 'Solicitar Corrida';
 
-  if (!requestOk) {
+  if (!requestResult) {
     errorEl.textContent = 'Não consegui registrar o pedido no sistema, mas o WhatsApp foi aberto normalmente — combine direto com o motorista por lá.';
     errorEl.classList.remove('hidden');
   }
 
   showScreen('step-success');
+  if (requestResult?.tracking_url) setTimeout(() => { location.href = requestResult.tracking_url; }, 1200);
 }

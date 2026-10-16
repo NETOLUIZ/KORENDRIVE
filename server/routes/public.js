@@ -91,11 +91,15 @@ router.post('/driver/:slug/request-ride', withDbContext, asyncHandler(async (req
   res.json({ success: true, tracking_token: trackingToken, tracking_url: `/tracking/${trackingToken}` });
 }));
 
+// Devolve o status pra qualquer corrida com token válido — inclusive
+// 'requested' (motorista ainda não aceitou) e os estados finais ('completed',
+// 'cancelled'), pra tela pública saber a mensagem certa em cada fase. Só dá
+// 404 se o token não existe mesmo, não pelo status da corrida.
 router.get('/tracking/:token', withDbContext, asyncHandler(async (req, res) => {
   await req.db.query("SELECT set_config('app.bypass_public_rls', 'true', true)");
   const { rows } = await req.db.query('SELECT status, driver_lat, driver_lng, driver_location_at FROM rides WHERE tracking_token = $1', [req.params.token]);
   const ride = rows[0];
-  if (!ride || !['accepted', 'in_progress'].includes(ride.status)) return res.status(404).json({ error: 'Acompanhamento indisponível.' });
+  if (!ride) return res.status(404).json({ error: 'Corrida não encontrada.' });
   res.json({ status: ride.status, driver_location: ride.driver_lat == null ? null : { lat: Number(ride.driver_lat), lng: Number(ride.driver_lng), updated_at: ride.driver_location_at } });
 }));
 

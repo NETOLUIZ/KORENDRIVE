@@ -93,6 +93,11 @@ app.get('/p/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'booking.html'));
 });
 
+// Link de acompanhamento: tela pública pro passageiro ver o motorista se deslocando
+app.get('/tracking/:token', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'tracking.html'));
+});
+
 // Fallback para SPA
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));

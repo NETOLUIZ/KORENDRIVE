@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+  <title>korenDriver - Acompanhar Corrida</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Google Material Symbols -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+  <!-- MapLibre GL JS + OpenFreeMap (mesmo estilo "Positron" usado na tela de solicitação) -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.14.0/dist/maplibre-gl.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: '#FB4F14', dark: '#D93D08', light: '#FF875C', dim: 'rgba(251, 79, 20, 0.12)' },
+            surface: { main: '#F9F8EF', card: '#FFFFFF', subtle: '#F1F0E9', border: '#D9D7CF' }
+          },
+          fontFamily: {
+            sans: ['"Uber Move Text"', 'DM Sans', '-apple-system', 'BlinkMacSystemFont', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+            display: ['"Uber Move"', 'DM Sans', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-surface-main font-sans min-h-screen">
+
+  <main class="w-full max-w-md mx-auto px-4 py-6">
+    <div class="flex items-center gap-2 mb-5">
+      <div class="w-9 h-9 rounded-lg bg-brand flex items-center justify-center text-white shrink-0">
+        <span class="material-symbols-outlined text-xl">local_taxi</span>
+      </div>
+      <h1 class="font-display font-bold text-lg text-slate-800">Acompanhar corrida</h1>
+    </div>
+
+    <!-- Estado: Carregando -->
+    <div id="view-loading" class="flex flex-col items-center justify-center gap-3 py-16">
+      <div class="w-10 h-10 border-4 border-surface-border border-t-brand rounded-full animate-spin"></div>
+      <p class="text-xs text-slate-400">Carregando...</p>
+    </div>
+
+    <!-- Estado: link inválido / corrida não encontrada -->
+    <div id="view-invalid" class="hidden flex-col items-center justify-center gap-3 text-center py-16">
+      <div class="w-16 h-16 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center">
+        <span class="material-symbols-outlined text-red-500 text-3xl">link_off</span>
+      </div>
+      <h2 class="font-display font-bold text-slate-800">Link inválido</h2>
+      <p class="text-xs text-slate-500 max-w-xs">Este link de acompanhamento não existe ou não está mais disponível.</p>
+    </div>
+
+    <!-- Estado: corrida encerrada (concluída ou cancelada) -->
+    <div id="view-ended" class="hidden flex-col items-center justify-center gap-3 text-center py-16">
+      <div id="ended-icon-wrap" class="w-16 h-16 rounded-2xl flex items-center justify-center"></div>
+      <h2 id="ended-title" class="font-display font-bold text-slate-800"></h2>
+      <p id="ended-text" class="text-xs text-slate-500 max-w-xs"></p>
+    </div>
+
+    <!-- Estado: acompanhando (aguardando aceite, a caminho ou em viagem) -->
+    <div id="view-tracking" class="hidden">
+      <div class="bg-surface-card rounded-xl border border-surface-border p-4 mb-3 flex items-center gap-3">
+        <div id="status-icon-wrap" class="w-11 h-11 rounded-full bg-brand-dim flex items-center justify-center text-brand shrink-0">
+          <span id="status-icon" class="material-symbols-outlined text-2xl">hourglass_top</span>
+        </div>
+        <div>
+          <p id="status-text" class="text-sm font-semibold text-slate-800">Aguardando o motorista aceitar...</p>
+          <p id="status-subtext" class="text-xs text-slate-500">Isso pode levar alguns minutos.</p>
+        </div>
+      </div>
+      <div id="tracking-map" class="hidden h-80 rounded-xl border border-surface-border"></div>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/maplibre-gl@6.14.0/dist/maplibre-gl.js"></script>
+  <script>
+    const STATUS_MESSAGES = {
+      requested: { icon: 'hourglass_top', text: 'Aguardando o motorista aceitar...', subtext: 'Isso pode levar alguns minutos.', showMap: false },
+      accepted: { icon: 'directions_car', text: 'Motorista a caminho', subtext: 'Acompanhe a localização no mapa.', showMap: true },
+      in_progress: { icon: 'navigation', text: 'Em viagem', subtext: 'Acompanhe a localização no mapa.', showMap: true }
+    };
+
+    let map, marker, timer;
+
+    function getToken() {
+      const pathParts = location.pathname.split('/tracking/');
+      if (pathParts[1]) return decodeURIComponent(pathParts[1]);
+      return new URLSearchParams(location.search).get('token');
+    }
+
+    function showView(id) {
+      ['view-loading', 'view-invalid', 'view-ended', 'view-tracking'].forEach(v => {
+        document.getElementById(v).classList.toggle('hidden', v !== id);
+      });
+    }
+
+    function showEnded(kind) {
+      const iconWrap = document.getElementById('ended-icon-wrap');
+      const title = document.getElementById('ended-title');
+      const text = document.getElementById('ended-text');
+      if (kind === 'completed') {
+        iconWrap.className = 'w-16 h-16 rounded-2xl bg-brand-dim flex items-center justify-center text-brand';
+        iconWrap.innerHTML = '<span class="material-symbols-outlined text-3xl">task_alt</span>';
+        title.textContent = 'Corrida concluída';
+        text.textContent = 'Obrigado por usar o korenDriver!';
+      } else {
+        iconWrap.className = 'w-16 h-16 rounded-2xl bg-surface-subtle flex items-center justify-center text-slate-400';
+        iconWrap.innerHTML = '<span class="material-symbols-outlined text-3xl">cancel</span>';
+        title.textContent = 'Corrida cancelada';
+        text.textContent = 'Esta corrida não está mais ativa.';
+      }
+      showView('view-ended');
+    }
+
+    function renderTracking(statusInfo, driverLocation) {
+      showView('view-tracking');
+      document.getElementById('status-icon').textContent = statusInfo.icon;
+      document.getElementById('status-text').textContent = statusInfo.text;
+      document.getElementById('status-subtext').textContent = statusInfo.subtext;
+
+      const mapEl = document.getElementById('tracking-map');
+      if (!statusInfo.showMap) {
+        mapEl.classList.add('hidden');
+        return;
+      }
+      mapEl.classList.remove('hidden');
+
+      if (!map) {
+        map = new maplibregl.Map({
+          container: mapEl,
+          style: 'https://tiles.openfreemap.org/styles/positron',
+          center: driverLocation ? [driverLocation.lng, driverLocation.lat] : [-38.52, -3.73],
+          zoom: 14
+        });
+      }
+
+      if (!driverLocation) {
+        document.getElementById('status-subtext').textContent = 'Aguardando localização do motorista...';
+        return;
+      }
+
+      const point = [driverLocation.lng, driverLocation.lat];
+      if (!marker) marker = new maplibregl.Marker({ color: '#FB4F14' }).setLngLat(point).addTo(map);
+      else marker.setLngLat(point);
+      map.flyTo({ center: point, zoom: 15 });
+    }
+
+    async function poll(token) {
+      try {
+        const res = await fetch('/api/public/tracking/' + encodeURIComponent(token));
+        if (!res.ok) {
+          clearInterval(timer);
+          showView('view-invalid');
+          return;
+        }
+        const data = await res.json();
+
+        if (data.status === 'completed' || data.status === 'cancelled') {
+          clearInterval(timer);
+          showEnded(data.status);
+          return;
+        }
+
+        const statusInfo = STATUS_MESSAGES[data.status] || STATUS_MESSAGES.requested;
+        renderTracking(statusInfo, data.driver_location);
+      } catch (err) {
+        console.error('Erro ao buscar status da corrida:', err);
+      }
+    }
+
+    function startTracking() {
+      const token = getToken();
+      if (!token) {
+        showView('view-invalid');
+        return;
+      }
+      poll(token);
+      timer = setInterval(() => poll(token), 5000);
+    }
+
+    startTracking();
+  </script>
+</body>
+</html>
