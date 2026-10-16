@@ -53,7 +53,7 @@
     </div>
 
     <!-- Estado: link inválido / corrida não encontrada -->
-    <div id="view-invalid" class="hidden flex-col items-center justify-center gap-3 text-center py-16">
+    <div id="view-invalid" class="hidden flex flex-col items-center justify-center gap-3 text-center py-16">
       <div class="w-16 h-16 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center">
         <span class="material-symbols-outlined text-red-500 text-3xl">link_off</span>
       </div>
@@ -62,7 +62,7 @@
     </div>
 
     <!-- Estado: corrida encerrada (concluída ou cancelada) -->
-    <div id="view-ended" class="hidden flex-col items-center justify-center gap-3 text-center py-16">
+    <div id="view-ended" class="hidden flex flex-col items-center justify-center gap-3 text-center py-16">
       <div id="ended-icon-wrap" class="w-16 h-16 rounded-2xl flex items-center justify-center"></div>
       <h2 id="ended-title" class="font-display font-bold text-slate-800"></h2>
       <p id="ended-text" class="text-xs text-slate-500 max-w-xs"></p>
@@ -83,8 +83,11 @@
     </div>
   </main>
 
-  <script src="https://unpkg.com/maplibre-gl@6.14.0/dist/maplibre-gl.js"></script>
-  <script>
+  <script type="module">
+    // A partir da v5, o pacote só publica build ESM (.mjs) — não existe mais
+    // dist/maplibre-gl.js (UMD/global). Mesmo import usado em booking.js.
+    import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.14.0/dist/maplibre-gl.mjs';
+
     const STATUS_MESSAGES = {
       requested: { icon: 'hourglass_top', text: 'Aguardando o motorista aceitar...', subtext: 'Isso pode levar alguns minutos.', showMap: false },
       accepted: { icon: 'directions_car', text: 'Motorista a caminho', subtext: 'Acompanhe a localização no mapa.', showMap: true },
