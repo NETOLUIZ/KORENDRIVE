@@ -12,6 +12,23 @@ function publicAdmin(admin) {
   return rest;
 }
 
+function publicCompany(company) {
+  const { password_hash, password_salt, ...rest } = company;
+  return rest;
+}
+
+export function validateCompanyPayload(payload = {}) {
+  const company = payload.company || {};
+  const admin = payload.admin || {};
+  const required = [company.name, company.phone, company.email, company.address, company.plan, company.monthly_fee, admin.name, admin.email, admin.password];
+  if (required.some(value => value === undefined || value === null || String(value).trim() === '')) return { ok: false, error: 'Preencha todos os campos obrigatórios.' };
+  const cnpj = String(company.cnpj || '').replace(/\D/g, '');
+  if (cnpj && cnpj.length !== 14) return { ok: false, error: 'CNPJ deve ter 14 dígitos.' };
+  const monthly_fee = Number(company.monthly_fee);
+  if (!Number.isFinite(monthly_fee) || monthly_fee < 0) return { ok: false, error: 'Mensalidade inválida.' };
+  return { ok: true, value: { company: { ...company, cnpj: cnpj || null, monthly_fee }, admin } };
+}
+
 async function generateInviteToken(db) {
   for (let i = 0; i < 5; i++) {
     const token = crypto.randomBytes(6).toString('base64url');
@@ -148,6 +165,55 @@ router.patch('/drivers/:id/approval', requireSuperAdmin, withDbContext, asyncHan
   await handleDriverApproval(req, res, {
     extraWhereSql: 'admin_id IS NULL'
   });
+}));
+
+router.get('/companies', requireSuperAdmin, withDbContext, asyncHandler(async (req, res) => {
+  const { rows } = await req.db.query(`SELECT c.*, a.name AS admin_name, a.email AS admin_email,
+    (SELECT COUNT(*) FROM drivers d WHERE d.admin_id = c.admin_id) AS driver_count
+    FROM companies c JOIN admins a ON a.id = c.admin_id ORDER BY c.created_at DESC`);
+  res.json({ companies: rows.map(company => ({ ...publicCompany(company), driver_count: Number(company.driver_count) })) });
+}));
+
+router.post('/companies', requireSuperAdmin, withDbContext, asyncHandler(async (req, res) => {
+  const validation = validateCompanyPayload(req.body);
+  if (!validation.ok) return res.status(400).json({ error: validation.error });
+  const { company, admin } = validation.value;
+  const existing = await req.db.query('SELECT id FROM admins WHERE email = $1', [admin.email]);
+  if (existing.rows[0]) return res.status(409).json({ error: 'Já existe um administrador com este e-mail.' });
+  const { hash, salt } = hashPassword(admin.password);
+  const inviteToken = await generateInviteToken(req.db);
+  const { rows: admins } = await req.db.query(`INSERT INTO admins (name, email, password_hash, password_salt, company_name, role, invite_token, status, payment_status, monthly_fee)
+    VALUES ($1,$2,$3,$4,$5,'admin',$6,'active','em_dia',$7) RETURNING *`, [admin.name, admin.email, hash, salt, company.name, inviteToken, company.monthly_fee]);
+  const responsible = admins[0];
+  const { rows } = await req.db.query(`INSERT INTO companies (name, cnpj, phone, email, address, plan, monthly_fee, admin_id)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`, [company.name, company.cnpj, company.phone, company.email, company.address, company.plan, company.monthly_fee, responsible.id]);
+  res.json({ success: true, company: publicCompany({ ...rows[0], admin_name: responsible.name, admin_email: responsible.email, driver_count: 0 }) });
+}));
+
+router.get('/companies/:id', requireSuperAdmin, withDbContext, asyncHandler(async (req, res) => {
+  const { rows } = await req.db.query('SELECT c.*, a.name AS admin_name, a.email AS admin_email FROM companies c JOIN admins a ON a.id = c.admin_id WHERE c.id = $1', [req.params.id]);
+  if (!rows[0]) return res.status(404).json({ error: 'Empresa não encontrada.' });
+  const company = rows[0];
+  const drivers = await req.db.query('SELECT id, name, phone, email, status, approval_status, created_at FROM drivers WHERE admin_id = $1 ORDER BY created_at DESC', [company.admin_id]);
+  res.json({ company: publicCompany(company), drivers: drivers.rows });
+}));
+
+router.patch('/companies/:id', requireSuperAdmin, withDbContext, asyncHandler(async (req, res) => {
+  const { name, cnpj, phone, email, address, plan, monthly_fee } = req.body;
+  if (![name, phone, email, address, plan, monthly_fee].every(value => value !== undefined && String(value).trim() !== '')) return res.status(400).json({ error: 'Preencha todos os campos obrigatórios.' });
+  const { rows } = await req.db.query(`UPDATE companies SET name=$1, cnpj=$2, phone=$3, email=$4, address=$5, plan=$6, monthly_fee=$7, updated_at=now() WHERE id=$8 RETURNING *`, [name, String(cnpj || '').replace(/\D/g, '') || null, phone, email, address, plan, Number(monthly_fee), req.params.id]);
+  if (!rows[0]) return res.status(404).json({ error: 'Empresa não encontrada.' });
+  await req.db.query('UPDATE admins SET company_name=$1, monthly_fee=$2 WHERE id=$3', [rows[0].name, rows[0].monthly_fee, rows[0].admin_id]);
+  res.json({ success: true, company: publicCompany(rows[0]) });
+}));
+
+router.patch('/companies/:id/status', requireSuperAdmin, withDbContext, asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  if (!['active', 'blocked'].includes(status)) return res.status(400).json({ error: 'Status inválido.' });
+  const { rows } = await req.db.query('UPDATE companies SET status=$1, updated_at=now() WHERE id=$2 RETURNING *', [status, req.params.id]);
+  if (!rows[0]) return res.status(404).json({ error: 'Empresa não encontrada.' });
+  await req.db.query('UPDATE admins SET status=$1 WHERE id=$2', [status, rows[0].admin_id]);
+  res.json({ success: true, company: publicCompany(rows[0]) });
 }));
 
 // Logout
