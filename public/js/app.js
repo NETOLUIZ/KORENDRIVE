@@ -105,6 +105,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 // via polling a cada 15s.
 // ============================================================================
 let pendingRidesPollingStarted = false;
+let locationWatchId = null;
+let trackedRideId = null;
+
+function startRideLocationSharing(rideId) {
+  if (!navigator.geolocation || trackedRideId === rideId) return;
+  stopRideLocationSharing();
+  trackedRideId = rideId;
+  locationWatchId = navigator.geolocation.watchPosition(pos => {
+    api.updateRideLocation(rideId, pos.coords.latitude, pos.coords.longitude).catch(() => {});
+  }, () => showToast('Localização indisponível; a corrida continua normalmente.'), { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 });
+}
+function stopRideLocationSharing() { if (locationWatchId !== null) navigator.geolocation.clearWatch(locationWatchId); locationWatchId = null; trackedRideId = null; }
 
 function startPendingRidesPolling() {
   if (pendingRidesPollingStarted) return;
@@ -183,13 +195,13 @@ function openWazeNavigation(lat, lng) {
 
 async function handleAcceptRide(id) {
   const res = await api.acceptRide(id);
-  if (res.success) { showToast('Corrida aceita!'); pollPendingRides(); }
+  if (res.success) { startRideLocationSharing(id); showToast('Corrida aceita! Compartilhando localização.'); pollPendingRides(); }
   else showToast(res.error || 'Erro ao aceitar corrida.');
 }
 
 async function handleRejectRide(id) {
   const res = await api.cancelRide(id);
-  if (res.success) { showToast('Pedido recusado.'); state.arrivedRideIds.delete(id); pollPendingRides(); }
+  if (res.success) { if (trackedRideId === id) stopRideLocationSharing(); showToast('Pedido recusado.'); state.arrivedRideIds.delete(id); pollPendingRides(); }
   else showToast(res.error || 'Erro ao recusar pedido.');
 }
 
@@ -212,6 +224,7 @@ async function handleStartRide(id, destinationLat, destinationLng) {
 async function handleCompleteRide(id) {
   const res = await api.completeRide(id);
   if (res.success) {
+    if (trackedRideId === id) stopRideLocationSharing();
     showToast('Corrida finalizada!');
     state.arrivedRideIds.delete(id);
     pollPendingRides();

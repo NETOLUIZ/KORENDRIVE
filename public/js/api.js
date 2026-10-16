@@ -153,6 +153,10 @@ export const api = {
     return authFetch(`/rides/${id}/start`, { method: 'PATCH' });
   },
 
+  async updateRideLocation(id, latitude, longitude) {
+    return authFetch(`/rides/${id}/location`, { method: 'PATCH', body: JSON.stringify({ latitude, longitude }) });
+  },
+
   async completeRide(id) {
     return authFetch(`/rides/${id}/complete`, { method: 'PATCH' });
   },

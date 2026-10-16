@@ -99,6 +99,15 @@ router.patch('/:id/start', requireDriver, requireApprovedDriver, withDbContext, 
   res.json({ success: true, ride: rows[0] });
 }));
 
+router.patch('/:id/location', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
+  const { latitude, longitude } = req.body;
+  if (!Number.isFinite(Number(latitude)) || !Number.isFinite(Number(longitude)) || Math.abs(Number(latitude)) > 90 || Math.abs(Number(longitude)) > 180) return res.status(400).json({ error: 'Localização inválida.' });
+  const { rows } = await req.db.query(`UPDATE rides SET driver_lat=$1, driver_lng=$2, driver_location_at=now()
+    WHERE id=$3 AND driver_id=$4 AND status IN ('accepted','in_progress') RETURNING *`, [Number(latitude), Number(longitude), req.params.id, req.driver.id]);
+  if (!rows[0]) return res.status(404).json({ error: 'Corrida não encontrada ou inativa.' });
+  res.json({ success: true });
+}));
+
 router.patch('/:id/complete', requireDriver, requireApprovedDriver, withDbContext, asyncHandler(async (req, res) => {
   const { rows } = await req.db.query(`
     UPDATE rides SET status = 'completed', completed_at = now()

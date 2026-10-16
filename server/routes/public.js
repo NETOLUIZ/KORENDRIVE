@@ -1,4 +1,5 @@
 import express from 'express';
+import crypto from 'node:crypto';
 import { withDbContext } from '../middleware/dbContext.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
@@ -66,6 +67,7 @@ router.post('/driver/:slug/request-ride', withDbContext, asyncHandler(async (req
   }
 
   const now = new Date();
+  const trackingToken = crypto.randomBytes(24).toString('base64url');
   const formattedDate = `Hoje, ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
   // Sem RETURNING de propósito: não existe (nem deve existir) política de
@@ -76,17 +78,25 @@ router.post('/driver/:slug/request-ride', withDbContext, asyncHandler(async (req
     INSERT INTO rides (
       driver_id, passenger_name, passenger_phone, origin, destination,
       origin_lat, origin_lng, destination_lat, destination_lng,
-      distance_km, duration_min, fare, status, date_time, notes
+      distance_km, duration_min, fare, status, date_time, notes, tracking_token
     )
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'requested',$13,$14)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'requested',$13,$14,$15)
   `, [
     driver.id, passenger_name, passenger_phone || '', origin, destination,
     origin_lat || null, origin_lng || null, destination_lat || null, destination_lng || null,
     parseFloat(distance_km) || 0, parseInt(duration_min) || 0, parseFloat(fare),
-    formattedDate, notes || ''
+    formattedDate, notes || '', trackingToken
   ]);
 
-  res.json({ success: true });
+  res.json({ success: true, tracking_token: trackingToken, tracking_url: `/tracking/${trackingToken}` });
+}));
+
+router.get('/tracking/:token', withDbContext, asyncHandler(async (req, res) => {
+  await req.db.query("SELECT set_config('app.bypass_public_rls', 'true', true)");
+  const { rows } = await req.db.query('SELECT status, driver_lat, driver_lng, driver_location_at FROM rides WHERE tracking_token = $1', [req.params.token]);
+  const ride = rows[0];
+  if (!ride || !['accepted', 'in_progress'].includes(ride.status)) return res.status(404).json({ error: 'Acompanhamento indisponível.' });
+  res.json({ status: ride.status, driver_location: ride.driver_lat == null ? null : { lat: Number(ride.driver_lat), lng: Number(ride.driver_lng), updated_at: ride.driver_location_at } });
 }));
 
 export default router;

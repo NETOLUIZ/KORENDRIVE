@@ -183,6 +183,11 @@ ALTER TABLE rides ADD COLUMN IF NOT EXISTS destination_lng NUMERIC(10,7);
 ALTER TABLE rides ADD COLUMN IF NOT EXISTS accepted_at TIMESTAMPTZ;
 ALTER TABLE rides ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ;
 ALTER TABLE rides ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;
+ALTER TABLE rides ADD COLUMN IF NOT EXISTS tracking_token TEXT UNIQUE;
+ALTER TABLE rides ADD COLUMN IF NOT EXISTS driver_lat NUMERIC(10,7);
+ALTER TABLE rides ADD COLUMN IF NOT EXISTS driver_lng NUMERIC(10,7);
+ALTER TABLE rides ADD COLUMN IF NOT EXISTS driver_location_at TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS idx_rides_tracking_token ON rides(tracking_token);
 
 -- 'accepted' é o estado entre "pedido recebido" e "corrida em andamento" —
 -- motorista já confirmou mas ainda não apertou Iniciar Corrida.
@@ -322,3 +327,7 @@ CREATE POLICY rides_public_insert ON rides FOR INSERT
       WHERE public_slug IS NOT NULL AND can_share_direct_link = true AND approval_status = 'approved'
     )
   );
+
+DROP POLICY IF EXISTS rides_public_tracking ON rides;
+CREATE POLICY rides_public_tracking ON rides FOR SELECT
+  USING (current_setting('app.bypass_public_rls', true) = 'true' AND tracking_token IS NOT NULL);
