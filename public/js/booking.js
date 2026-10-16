@@ -335,6 +335,14 @@ function setOriginFromCoords(lat, lon, label) {
   state.coordsByInputId['booking-origin'] = { lat, lon };
   updateContinueButtonState();
   calculateRoute();
+
+  // GPS e toque no mapa (geocodificação reversa) quase nunca trazem o número
+  // da casa, só rua/bairro — diferente da busca por texto, que tem o campo
+  // "Nº" ao lado mas sem nenhum aviso visual chamando atenção pra ele. Foca
+  // o campo pra guiar o passageiro a completar na hora, em vez de só confiar
+  // que ele vai notar a dica de texto.
+  const numberInput = document.getElementById('booking-origin-number');
+  if (numberInput && !numberInput.value.trim()) numberInput.focus();
 }
 
 // Pedida automaticamente ao entrar na Etapa 2, e também pelo botão de mira
