@@ -7,6 +7,7 @@ const state = {
   admins: [],       // vem de GET /admins (tem created_at, usado pros gráficos honestos)
   billing: null,    // vem de GET /billing-summary (totais oficiais, calculados no servidor)
   independentDrivers: [], // vem de GET /drivers (motoristas sem admin_id)
+  companies: [],
   selectedDriverId: null,
   revenuePeriod: '6m',
   currentPage: 'dashboard'
@@ -31,6 +32,12 @@ window.openDriverReviewModal = openDriverReviewModal;
 window.closeDriverReviewModal = closeDriverReviewModal;
 window.handleApproveDriverClick = handleApproveDriverClick;
 window.handleRejectDriverClick = handleRejectDriverClick;
+window.toggleCompanyForm = toggleCompanyForm;
+window.handleCreateCompany = handleCreateCompany;
+window.renderCompaniesPage = renderCompaniesPage;
+window.openCompanyDetail = openCompanyDetail;
+window.closeCompanyDetail = closeCompanyDetail;
+window.handleCompanyStatus = handleCompanyStatus;
 
 function togglePasswordVisibility(inputId, iconId) {
   const input = document.getElementById(inputId);
@@ -73,6 +80,7 @@ function showDashboard() {
   renderAdminsTable();
   loadBillingSummary();
   loadIndependentDrivers();
+  loadCompanies();
 }
 
 // ============================================================================
@@ -99,11 +107,14 @@ function navigateSA(page) {
   document.getElementById('page-title').textContent = title;
   document.getElementById('page-subtitle').textContent = subtitle;
 
-  const isDashboard = page === 'dashboard' || page === 'administradores' || page === 'motoristas-independentes';
+  const isDashboard = page === 'dashboard' || page === 'administradores' || page === 'motoristas-independentes' || page === 'empresas';
   document.getElementById('page-dashboard').classList.toggle('hidden', page !== 'dashboard');
   document.getElementById('page-administradores').classList.toggle('hidden', page !== 'administradores');
   document.getElementById('page-motoristas-independentes').classList.toggle('hidden', page !== 'motoristas-independentes');
+  document.getElementById('page-empresas').classList.toggle('hidden', page !== 'empresas');
   document.getElementById('page-placeholder').classList.toggle('hidden', isDashboard);
+
+  if (page === 'empresas') loadCompanies();
 
   if (!isDashboard) {
     const icons = { empresas: 'business', assinaturas: 'workspace_premium', pagamentos: 'payments', relatorios: 'monitoring', configuracoes: 'settings' };
@@ -842,3 +853,45 @@ function showToast(msg) {
     }, 2800);
   }
 }
+
+async function loadCompanies() {
+  const res = await superadminApi.listCompanies();
+  if (res.ok) { state.companies = res.companies; renderCompaniesPage(); }
+}
+
+function formatMoney(value) { return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+
+function renderCompaniesPage() {
+  const query = (document.getElementById('companies-search')?.value || '').toLowerCase();
+  const companies = state.companies.filter(c => [c.name, c.admin_name, c.admin_email].some(v => String(v || '').toLowerCase().includes(query)));
+  const body = document.getElementById('companies-table-body');
+  if (!body) return;
+  body.innerHTML = companies.map(c => `<tr><td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.admin_name || '')}<br><span class="text-xs text-satext2">${escapeHtml(c.admin_email || '')}</span></td><td>${escapeHtml(c.plan)}</td><td>${c.driver_count}</td><td>${formatMoney(c.monthly_fee)}</td><td>${statusBadge(c.status)}</td><td><button onclick="openCompanyDetail(${c.id})" class="text-sagreen">Ver</button></td></tr>`).join('') || '<tr><td colspan="7" class="text-center py-6 text-satext2">Nenhuma empresa encontrada.</td></tr>';
+  const active = state.companies.filter(c => c.status === 'active');
+  document.getElementById('companies-active').textContent = active.length;
+  document.getElementById('companies-blocked').textContent = state.companies.length - active.length;
+  document.getElementById('companies-drivers').textContent = state.companies.reduce((n, c) => n + Number(c.driver_count || 0), 0);
+  document.getElementById('companies-revenue').textContent = formatMoney(active.reduce((n, c) => n + Number(c.monthly_fee || 0), 0));
+}
+
+function toggleCompanyForm() { document.getElementById('form-company').classList.toggle('hidden'); }
+
+async function handleCreateCompany(event) {
+  event.preventDefault();
+  const value = id => document.getElementById(id).value.trim();
+  const payload = { company: { name: value('company-name'), cnpj: value('company-cnpj'), phone: value('company-phone'), email: value('company-email'), address: value('company-address'), plan: value('company-plan'), monthly_fee: value('company-fee') }, admin: { name: value('company-admin-name'), email: value('company-admin-email'), password: value('company-admin-password') } };
+  const res = await superadminApi.createCompany(payload);
+  if (!res.ok) return showToast(res.error || 'Não foi possível cadastrar a empresa.');
+  event.target.reset(); event.target.classList.add('hidden'); showToast('Empresa cadastrada com sucesso.');
+  await Promise.all([loadCompanies(), loadAdmins(), loadBillingSummary()]); renderAdminsTable();
+}
+
+async function openCompanyDetail(id) {
+  const res = await superadminApi.getCompany(id);
+  if (!res.ok) return showToast(res.error || 'Não foi possível carregar a empresa.');
+  const { company, drivers } = res;
+  document.getElementById('company-detail-content').innerHTML = `<h2 class="font-bold text-lg">${escapeHtml(company.name)}</h2><p class="text-sm text-satext2">${escapeHtml(company.admin_name)} · ${escapeHtml(company.plan)}</p><p class="mt-4 text-sm">${drivers.length} motorista(s) vinculado(s)</p><ul class="mt-2 text-sm space-y-1">${drivers.map(d => `<li>${escapeHtml(d.name)} — ${escapeHtml(d.email)}</li>`).join('') || '<li class="text-satext2">Nenhum motorista vinculado.</li>'}</ul><button onclick="handleCompanyStatus(${company.id}, '${company.status === 'active' ? 'blocked' : 'active'}')" class="sa-btn-secondary mt-5 rounded-lg px-3 py-2">${company.status === 'active' ? 'Bloquear empresa' : 'Desbloquear empresa'}</button>`;
+  document.getElementById('modal-company-detail').classList.remove('hidden'); document.getElementById('modal-company-detail').classList.add('flex');
+}
+function closeCompanyDetail() { const el = document.getElementById('modal-company-detail'); el.classList.add('hidden'); el.classList.remove('flex'); }
+async function handleCompanyStatus(id, status) { const res = await superadminApi.setCompanyStatus(id, status); if (!res.ok) return showToast(res.error || 'Não foi possível atualizar a empresa.'); closeCompanyDetail(); showToast('Status da empresa atualizado.'); await Promise.all([loadCompanies(), loadAdmins(), loadBillingSummary()]); renderAdminsTable(); }

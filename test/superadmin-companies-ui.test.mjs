@@ -10,3 +10,10 @@ test('superadmin client exposes company management requests', async () => {
     assert.match(source, new RegExp(`async ${method}\\(`));
   }
 });
+
+test('superadmin has a Companies page with registration form and table', async () => {
+  const html = await readFile(new URL('public/superadmin.html', root), 'utf8');
+  for (const id of ['page-empresas', 'form-company', 'companies-table-body', 'modal-company-detail']) {
+    assert.match(html, new RegExp(`id="${id}"`));
+  }
+});

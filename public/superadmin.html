@@ -437,7 +437,30 @@
               </div>
             </div>
 
-            <!-- ===== PÁGINA: PLACEHOLDER (Empresas / Assinaturas / Pagamentos / Relatórios / Configurações) ===== -->
+            <!-- ===== PÁGINA: EMPRESAS ===== -->
+            <div id="page-empresas" class="hidden space-y-5">
+              <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div class="sa-card p-4"><p class="text-xs text-satext2">Ativas</p><p id="companies-active" class="text-2xl font-bold">0</p></div>
+                <div class="sa-card p-4"><p class="text-xs text-satext2">Bloqueadas</p><p id="companies-blocked" class="text-2xl font-bold">0</p></div>
+                <div class="sa-card p-4"><p class="text-xs text-satext2">Motoristas</p><p id="companies-drivers" class="text-2xl font-bold">0</p></div>
+                <div class="sa-card p-4"><p class="text-xs text-satext2">Receita mensal</p><p id="companies-revenue" class="text-2xl font-bold">R$ 0,00</p></div>
+              </div>
+              <div class="sa-card p-5">
+                <div class="flex flex-wrap justify-between gap-3 mb-4"><div><h2 class="font-bold">Empresas</h2><p class="text-xs text-satext2">Cadastre empresas e o administrador responsável.</p></div><button onclick="toggleCompanyForm()" class="sa-btn-primary rounded-lg px-4 py-2 text-sm">Nova empresa</button></div>
+                <input id="companies-search" oninput="renderCompaniesPage()" placeholder="Buscar empresa ou administrador" class="w-full bg-sabg2 border border-saborder rounded-lg px-3 py-2 text-sm mb-3">
+                <div class="overflow-x-auto"><table class="w-full sa-table"><thead><tr><th>Empresa</th><th>Administrador</th><th>Plano</th><th>Motoristas</th><th>Mensalidade</th><th>Status</th><th></th></tr></thead><tbody id="companies-table-body"></tbody></table></div>
+              </div>
+              <form id="form-company" onsubmit="handleCreateCompany(event)" class="hidden sa-card p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <h2 class="md:col-span-2 font-bold">Nova empresa</h2>
+                <input id="company-name" required placeholder="Nome da empresa" class="sa-input rounded-lg px-3 py-2 border"><input id="company-cnpj" placeholder="CNPJ (opcional)" class="rounded-lg px-3 py-2 border">
+                <input id="company-phone" required placeholder="Telefone" class="rounded-lg px-3 py-2 border"><input id="company-email" required type="email" placeholder="E-mail da empresa" class="rounded-lg px-3 py-2 border">
+                <input id="company-address" required placeholder="Endereço" class="md:col-span-2 rounded-lg px-3 py-2 border"><input id="company-plan" required placeholder="Plano" value="Padrão" class="rounded-lg px-3 py-2 border"><input id="company-fee" required type="number" step="0.01" min="0" value="99.90" class="rounded-lg px-3 py-2 border">
+                <input id="company-admin-name" required placeholder="Nome do administrador" class="rounded-lg px-3 py-2 border"><input id="company-admin-email" required type="email" placeholder="E-mail do administrador" class="rounded-lg px-3 py-2 border"><input id="company-admin-password" required type="password" placeholder="Senha do administrador" class="rounded-lg px-3 py-2 border"><button class="sa-btn-primary rounded-lg px-4 py-2">Cadastrar empresa</button>
+              </form>
+            </div>
+            <div id="modal-company-detail" class="fixed inset-0 z-[90] bg-black/60 hidden items-center justify-center p-4"><div class="sa-card w-full max-w-lg p-5"><button onclick="closeCompanyDetail()" class="float-right">×</button><div id="company-detail-content"></div></div></div>
+
+            <!-- ===== PÁGINA: PLACEHOLDER (Assinaturas / Pagamentos / Relatórios / Configurações) ===== -->
             <div id="page-placeholder" class="hidden">
               <div class="sa-card p-12 flex flex-col items-center justify-center text-center gap-3" style="min-height: 360px;">
                 <div class="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center">
