@@ -38,6 +38,7 @@ window.renderCompaniesPage = renderCompaniesPage;
 window.openCompanyDetail = openCompanyDetail;
 window.closeCompanyDetail = closeCompanyDetail;
 window.handleCompanyStatus = handleCompanyStatus;
+window.handleUpdateCompany = handleUpdateCompany;
 
 function togglePasswordVisibility(inputId, iconId) {
   const input = document.getElementById(inputId);
@@ -890,8 +891,21 @@ async function openCompanyDetail(id) {
   const res = await superadminApi.getCompany(id);
   if (!res.ok) return showToast(res.error || 'Não foi possível carregar a empresa.');
   const { company, drivers } = res;
-  document.getElementById('company-detail-content').innerHTML = `<h2 class="font-bold text-lg">${escapeHtml(company.name)}</h2><p class="text-sm text-satext2">${escapeHtml(company.admin_name)} · ${escapeHtml(company.plan)}</p><p class="mt-4 text-sm">${drivers.length} motorista(s) vinculado(s)</p><ul class="mt-2 text-sm space-y-1">${drivers.map(d => `<li>${escapeHtml(d.name)} — ${escapeHtml(d.email)}</li>`).join('') || '<li class="text-satext2">Nenhum motorista vinculado.</li>'}</ul><button onclick="handleCompanyStatus(${company.id}, '${company.status === 'active' ? 'blocked' : 'active'}')" class="sa-btn-secondary mt-5 rounded-lg px-3 py-2">${company.status === 'active' ? 'Bloquear empresa' : 'Desbloquear empresa'}</button>`;
+  document.getElementById('company-detail-content').innerHTML = `<h2 class="font-bold text-lg">${escapeHtml(company.name)}</h2><p class="text-sm text-satext2">${escapeHtml(company.admin_name)} · ${escapeHtml(company.plan)}</p><p class="mt-4 text-sm">${drivers.length} motorista(s) vinculado(s)</p><ul class="mt-2 text-sm space-y-1">${drivers.map(d => `<li>${escapeHtml(d.name)} — ${escapeHtml(d.email)}</li>`).join('') || '<li class="text-satext2">Nenhum motorista vinculado.</li>'}</ul><div class="flex gap-2 mt-5"><button onclick="handleUpdateCompany(${company.id})" class="sa-btn-secondary rounded-lg px-3 py-2">Editar</button><button onclick="handleCompanyStatus(${company.id}, '${company.status === 'active' ? 'blocked' : 'active'}')" class="sa-btn-secondary rounded-lg px-3 py-2">${company.status === 'active' ? 'Bloquear empresa' : 'Desbloquear empresa'}</button></div>`;
   document.getElementById('modal-company-detail').classList.remove('hidden'); document.getElementById('modal-company-detail').classList.add('flex');
 }
 function closeCompanyDetail() { const el = document.getElementById('modal-company-detail'); el.classList.add('hidden'); el.classList.remove('flex'); }
 async function handleCompanyStatus(id, status) { const res = await superadminApi.setCompanyStatus(id, status); if (!res.ok) return showToast(res.error || 'Não foi possível atualizar a empresa.'); closeCompanyDetail(); showToast('Status da empresa atualizado.'); await Promise.all([loadCompanies(), loadAdmins(), loadBillingSummary()]); renderAdminsTable(); }
+
+async function handleUpdateCompany(id) {
+  const company = state.companies.find(item => item.id === id);
+  if (!company) return;
+  const name = window.prompt('Nome da empresa', company.name);
+  if (name === null || !name.trim()) return;
+  const plan = window.prompt('Plano', company.plan);
+  const monthly_fee = window.prompt('Mensalidade', company.monthly_fee);
+  if (plan === null || monthly_fee === null) return;
+  const res = await superadminApi.updateCompany(id, { ...company, name: name.trim(), plan: plan.trim(), monthly_fee });
+  if (!res.ok) return showToast(res.error || 'Não foi possível atualizar a empresa.');
+  showToast('Empresa atualizada.'); await loadCompanies(); openCompanyDetail(id);
+}

@@ -17,3 +17,8 @@ test('superadmin has a Companies page with registration form and table', async (
     assert.match(html, new RegExp(`id="${id}"`));
   }
 });
+
+test('companies controller supports updating company data', async () => {
+  const source = await readFile(new URL('public/js/superadmin.js', root), 'utf8');
+  assert.match(source, /async function handleUpdateCompany\(/);
+});
