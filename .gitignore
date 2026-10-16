@@ -4,3 +4,4 @@ node_modules
 server/koren_driver.sqlite
 npm-debug.log
 .claude/
+.worktrees/
