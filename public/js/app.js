@@ -72,7 +72,7 @@ window.handleRejectRide = handleRejectRide;
 window.handleMarkArrived = handleMarkArrived;
 window.handleStartRide = handleStartRide;
 window.handleCompleteRide = handleCompleteRide;
-window.openWazeNavigation = openWazeNavigation;
+window.navigateToRidePoint = navigateToRidePoint;
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', async () => {
@@ -154,7 +154,6 @@ function renderPendingRides() {
   card.classList.remove('hidden');
 
   listEl.innerHTML = state.pendingRides.map(r => {
-    const hasOriginCoords = r.origin_lat != null && r.origin_lng != null;
     const arrived = state.arrivedRideIds.has(r.id);
 
     let actions = '';
@@ -165,13 +164,13 @@ function renderPendingRides() {
       `;
     } else if (r.status === 'accepted' && !arrived) {
       actions = `
-        ${hasOriginCoords ? `<button onclick="openWazeNavigation(${r.origin_lat}, ${r.origin_lng})" class="flex-1 py-2 rounded-lg border border-brand text-brand text-xs font-bold flex items-center justify-center gap-1"><span class="material-symbols-outlined text-sm">near_me</span>Navegar</button>` : ''}
+        <button onclick="navigateToRidePoint(${r.id}, 'origin')" class="flex-1 py-2 rounded-lg border border-brand text-brand text-xs font-bold flex items-center justify-center gap-1"><span class="material-symbols-outlined text-sm">near_me</span>Navegar</button>
         <button onclick="handleMarkArrived(${r.id})" class="flex-1 py-2 rounded-lg bg-brand text-black text-xs font-bold">Cheguei ao local</button>
       `;
     } else if (r.status === 'accepted' && arrived) {
       actions = `
         <button onclick="handleRejectRide(${r.id})" class="flex-1 py-2 rounded-lg border border-surface-border text-slate-400 text-xs font-semibold">Cancelar</button>
-        <button onclick="handleStartRide(${r.id}, ${r.destination_lat ?? 'null'}, ${r.destination_lng ?? 'null'})" class="flex-1 py-2 rounded-lg bg-brand text-black text-xs font-bold">Iniciar Corrida</button>
+        <button onclick="handleStartRide(${r.id})" class="flex-1 py-2 rounded-lg bg-brand text-black text-xs font-bold">Iniciar Corrida</button>
       `;
     } else if (r.status === 'in_progress') {
       actions = `<button onclick="handleCompleteRide(${r.id})" class="w-full py-2 rounded-lg bg-brand text-black text-xs font-bold">Finalizar Corrida</button>`;
@@ -193,8 +192,22 @@ function renderPendingRides() {
   }).join('');
 }
 
-function openWazeNavigation(lat, lng) {
-  window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank');
+// Navega até um ponto (origem ou destino) de uma corrida pendente. Prefere
+// coordenadas (mais preciso) — se a corrida não tiver (passageiro digitou o
+// endereço sem clicar numa sugestão do autocomplete), cai pro texto do
+// endereço: o próprio Waze geocodifica a partir de rua+número+bairro+cidade.
+function navigateToRidePoint(rideId, point) {
+  const ride = state.pendingRides.find(r => r.id === rideId);
+  if (!ride) return;
+  const lat = point === 'origin' ? ride.origin_lat : ride.destination_lat;
+  const lng = point === 'origin' ? ride.origin_lng : ride.destination_lng;
+  const address = point === 'origin' ? ride.origin : ride.destination;
+  openWazeNavigation(lat, lng, address);
+}
+
+function openWazeNavigation(lat, lng, address) {
+  const target = lat != null && lng != null ? `ll=${lat},${lng}` : `q=${encodeURIComponent(address || '')}`;
+  window.open(`https://waze.com/ul?${target}&navigate=yes`, '_blank');
 }
 
 async function handleAcceptRide(id) {
@@ -214,11 +227,11 @@ function handleMarkArrived(id) {
   renderPendingRides();
 }
 
-async function handleStartRide(id, destinationLat, destinationLng) {
+async function handleStartRide(id) {
   const res = await api.startRide(id);
   if (res.success) {
     showToast('Corrida iniciada!');
-    if (destinationLat != null && destinationLng != null) openWazeNavigation(destinationLat, destinationLng);
+    navigateToRidePoint(id, 'destination');
     pollPendingRides();
   } else {
     showToast(res.error || 'Erro ao iniciar corrida.');
