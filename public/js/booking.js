@@ -12,6 +12,9 @@ const state = {
   // partir delas que a rota real (OSRM) calcula km/min de verdade, em vez
   // do passageiro chutar os números.
   coordsByInputId: {},
+  // true quando a Origem veio de GPS ou toque no mapa: aí a coordenada é o
+  // ponto exato e é ela (não o texto) que vai pro link do Google Maps.
+  originFromPin: false,
   geoRequested: false
 };
 
@@ -100,6 +103,10 @@ function getDestinationAddress() {
   );
 }
 
+['booking-origin-number', 'booking-destination-number'].forEach((id) => {
+  document.getElementById(id)?.addEventListener('input', updateContinueButtonState);
+});
+
 function goToReview() {
   document.getElementById('review-origin-text').textContent = getOriginAddress();
   document.getElementById('review-destination-text').textContent = getDestinationAddress();
@@ -108,11 +115,29 @@ function goToReview() {
   showScreen('step-3');
 }
 
+// O OpenStreetMap quase não tem número de casa mapeado no Ceará, então a
+// sugestão/geocodificação volta só com rua+bairro+cidade. O número tem que vir
+// do passageiro: vale o campo "Nº" preenchido ou um dígito já no trecho da rua
+// (antes da primeira vírgula).
+function hasHouseNumber(addressInputId, numberInputId) {
+  const number = document.getElementById(numberInputId)?.value.trim();
+  if (number) return true;
+  const street = (document.getElementById(addressInputId)?.value || '').split(',')[0];
+  return /\d/.test(street);
+}
+
 function updateContinueButtonState() {
   const btn = document.getElementById('btn-continue-step2');
   if (!btn) return;
-  const ready = Boolean(state.coordsByInputId['booking-origin'] && state.coordsByInputId['booking-destination']);
-  btn.disabled = !ready;
+  const hasCoords = Boolean(state.coordsByInputId['booking-origin'] && state.coordsByInputId['booking-destination']);
+  // Origem do GPS/pino é um ponto exato — o número ajuda o motorista a achar a
+  // casa, mas não bloqueia. Origem digitada e Destino exigem o número.
+  const originOk = state.originFromPin || hasHouseNumber('booking-origin', 'booking-origin-number');
+  const destOk = hasHouseNumber('booking-destination', 'booking-destination-number');
+  btn.disabled = !(hasCoords && originOk && destOk);
+
+  const hint = document.getElementById('number-required-hint');
+  if (hint) hint.classList.toggle('hidden', !hasCoords || (originOk && destOk));
 }
 
 function addStop() {
@@ -202,6 +227,7 @@ function setupAddressAutocomplete(inputId, suggestionsId) {
           const r = results[Number(btn.dataset.idx)];
           input.value = buildFinalAddress(query, r.display_name);
           state.coordsByInputId[inputId] = { lat: parseFloat(r.lat), lon: parseFloat(r.lon) };
+          if (inputId === 'booking-origin') state.originFromPin = false;
           hideSuggestions();
           calculateRoute();
         };
@@ -219,6 +245,7 @@ function setupAddressAutocomplete(inputId, suggestionsId) {
     // Texto mudou na mão — a coordenada guardada (se tinha) não vale mais
     // pra rota, senão calcularia com um endereço que não é mais esse.
     delete state.coordsByInputId[inputId];
+    if (inputId === 'booking-origin') state.originFromPin = false;
     updateContinueButtonState();
     clearTimeout(debounceTimer);
     const query = input.value.trim();
@@ -333,6 +360,7 @@ function setOriginFromCoords(lat, lon, label) {
   input.value = label;
   input.placeholder = 'Sua localização atual';
   state.coordsByInputId['booking-origin'] = { lat, lon };
+  state.originFromPin = true;
   updateContinueButtonState();
   calculateRoute();
 
@@ -567,7 +595,11 @@ function normalizePhone(phone) {
 function buildMapsRouteUrl(origin, stops, destination) {
   const params = new URLSearchParams();
   params.set('api', '1');
-  params.set('origin', origin);
+  // GPS/pino: "lat,lon" cai exatamente no ponto, sem depender do Maps achar a
+  // rua pelo texto. Origem digitada: texto com o número da casa (mesmo padrão
+  // do white-restaurante, que monta rua, número, bairro, cidade pro Maps).
+  const originCoords = state.coordsByInputId['booking-origin'];
+  params.set('origin', state.originFromPin && originCoords ? `${originCoords.lat},${originCoords.lon}` : origin);
   params.set('destination', destination);
   if (stops.length > 0) params.set('waypoints', stops.join('|'));
   params.set('travelmode', 'driving');

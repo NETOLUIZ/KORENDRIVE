@@ -209,6 +209,20 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE INDEX IF NOT EXISTS idx_sessions_admin_id ON sessions(admin_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_driver_id ON sessions(driver_id);
 
+-- Recuperação de senha: código de 6 dígitos mandado por WhatsApp. Guarda só o
+-- hash do código (nunca ele em claro), com validade curta e limite de
+-- tentativas. Sem RLS de propósito: só o código do servidor toca nessa tabela
+-- e ela não expõe nada que o cliente consiga consultar por conta própria.
+CREATE TABLE IF NOT EXISTS password_resets (
+  id SERIAL PRIMARY KEY,
+  driver_id INTEGER NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
+  code_hash TEXT NOT NULL,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '15 minutes')
+);
+CREATE INDEX IF NOT EXISTS idx_password_resets_driver_id ON password_resets(driver_id);
+
 -- ============================================================================
 -- Row-Level Security
 -- ============================================================================

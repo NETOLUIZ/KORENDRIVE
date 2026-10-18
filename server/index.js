@@ -57,6 +57,17 @@ const loginLimiter = rateLimit({
   message: { error: 'Muitas tentativas. Tente novamente em alguns minutos.' }
 });
 app.use('/api/auth/login', loginLimiter);
+// Recuperação de senha: mesmo risco de força bruta (código de 6 dígitos) e de
+// flood de WhatsApp — limite por IP mais apertado que o do login.
+const resetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Muitas tentativas. Tente novamente em alguns minutos.' }
+});
+app.use('/api/auth/forgot-password', resetLimiter);
+app.use('/api/auth/reset-password', resetLimiter);
 app.use('/api/admin/login', loginLimiter);
 app.use('/api/superadmin/login', loginLimiter);
 

@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import express from 'express';
 import { generateDriverSlug } from '../db.js';
 import { hashPassword, verifyPassword, createSession, publicDriver, requireDriver } from '../middleware/auth.js';
@@ -85,6 +86,115 @@ router.post('/register', withDbContext, asyncHandler(async (req, res) => {
     phone,
     `Olá ${name}! 🚗 Seu cadastro na *koren* foi concluído com sucesso. Seja bem-vindo(a) à plataforma!`
   ).catch((err) => console.error('Erro ao enviar WhatsApp de boas-vindas:', err));
+}));
+
+// ---------------------------------------------------------------------------
+// Recuperação de senha por WhatsApp
+// ---------------------------------------------------------------------------
+const RESET_COOLDOWN_SECONDS = 60;
+const RESET_MAX_ATTEMPTS = 5;
+const MIN_PASSWORD_LENGTH = 6;
+
+const hashResetCode = (code) => crypto.createHash('sha256').update(String(code)).digest('hex');
+
+// Mesma resposta exista a conta ou não — senão essa rota viraria um jeito de
+// descobrir quais e-mails/CPFs/telefones estão cadastrados.
+const GENERIC_FORGOT_RESPONSE = {
+  success: true,
+  message: 'Se encontrarmos uma conta, enviamos um código de 6 dígitos para o WhatsApp cadastrado.'
+};
+
+// Passo 1: pede o código. Aceita e-mail, CPF ou telefone, igual ao login.
+router.post('/forgot-password', withDbContext, asyncHandler(async (req, res) => {
+  const identifier = String(req.body.identifier || '').trim();
+  if (!identifier) return res.status(400).json({ error: 'Informe seu e-mail, CPF ou telefone.' });
+
+  await req.db.query("SELECT set_config('app.bypass_login_rls', 'true', true)");
+  const { rows } = await req.db.query(
+    'SELECT id, name, phone FROM drivers WHERE email = $1 OR cpf = $1 OR phone = $1',
+    [identifier]
+  );
+  const driver = rows[0];
+  if (!driver) return res.json(GENERIC_FORGOT_RESPONSE);
+
+  // Cooldown: evita usar a rota pra floodar o WhatsApp de alguém com códigos.
+  const { rows: recent } = await req.db.query(
+    `SELECT 1 FROM password_resets
+     WHERE driver_id = $1 AND created_at > now() - make_interval(secs => $2)`,
+    [driver.id, RESET_COOLDOWN_SECONDS]
+  );
+  if (recent.length) return res.json(GENERIC_FORGOT_RESPONSE);
+
+  const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+  // Só o código mais recente vale — pedir um novo invalida os anteriores.
+  await req.db.query('DELETE FROM password_resets WHERE driver_id = $1', [driver.id]);
+  await req.db.query(
+    'INSERT INTO password_resets (driver_id, code_hash) VALUES ($1, $2)',
+    [driver.id, hashResetCode(code)]
+  );
+
+  res.json(GENERIC_FORGOT_RESPONSE);
+
+  // Depois da resposta, igual ao WhatsApp de boas-vindas: nunca atrasa nem
+  // revela (pelo tempo de resposta) se a conta existia.
+  sendWhatsAppMessage(
+    driver.phone,
+    `🔐 *koren* — seu código para redefinir a senha é *${code}*. Vale por 15 minutos. Se não foi você, ignore esta mensagem.`
+  ).catch((err) => console.error('Erro ao enviar WhatsApp de recuperação:', err));
+}));
+
+// Passo 2: confere o código e grava a nova senha.
+router.post('/reset-password', withDbContext, asyncHandler(async (req, res) => {
+  const identifier = String(req.body.identifier || '').trim();
+  const code = String(req.body.code || '').trim();
+  const password = String(req.body.password || '');
+
+  if (!identifier || !code || !password) {
+    return res.status(400).json({ error: 'Preencha todos os campos.' });
+  }
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return res.status(400).json({ error: `A senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.` });
+  }
+
+  const invalid = () => res.status(400).json({ error: 'Código inválido ou expirado. Peça um novo código.' });
+
+  await req.db.query("SELECT set_config('app.bypass_login_rls', 'true', true)");
+  const { rows } = await req.db.query(
+    'SELECT id FROM drivers WHERE email = $1 OR cpf = $1 OR phone = $1',
+    [identifier]
+  );
+  const driver = rows[0];
+  if (!driver) return invalid();
+
+  const { rows: resetRows } = await req.db.query(
+    'SELECT * FROM password_resets WHERE driver_id = $1 AND expires_at > now() ORDER BY id DESC LIMIT 1',
+    [driver.id]
+  );
+  const reset = resetRows[0];
+  if (!reset || reset.attempts >= RESET_MAX_ATTEMPTS) return invalid();
+
+  const given = Buffer.from(hashResetCode(code), 'hex');
+  const stored = Buffer.from(reset.code_hash, 'hex');
+  if (!crypto.timingSafeEqual(given, stored)) {
+    // O contador precisa sobreviver à resposta de erro, mas withDbContext
+    // reverte a transação em qualquer status >= 400. Por isso o erro sai como
+    // 200 com success:false só nesse caso.
+    await req.db.query('UPDATE password_resets SET attempts = attempts + 1 WHERE id = $1', [reset.id]);
+    return res.json({ success: false, error: 'Código incorreto.' });
+  }
+
+  // A partir daqui a transação "vira" o dono do registro, pra política
+  // drivers_self permitir o UPDATE (mesmo truque do cadastro).
+  await req.db.query('SELECT set_config($1, $2, true)', ['app.current_driver_id', String(driver.id)]);
+
+  const { hash, salt } = hashPassword(password);
+  await req.db.query('UPDATE drivers SET password_hash = $1, password_salt = $2 WHERE id = $3', [hash, salt, driver.id]);
+  await req.db.query('DELETE FROM password_resets WHERE driver_id = $1', [driver.id]);
+  // Derruba todas as sessões abertas: quem pediu a troca provavelmente perdeu
+  // o controle da conta, então o login antigo não pode continuar valendo.
+  await req.db.query('DELETE FROM sessions WHERE driver_id = $1', [driver.id]);
+
+  res.json({ success: true, message: 'Senha redefinida! Faça login com a nova senha.' });
 }));
 
 // Logout

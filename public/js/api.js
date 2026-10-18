@@ -74,6 +74,37 @@ export const api = {
     }
   },
 
+  // Recuperação de senha — rotas públicas, sem token. Um helper só pros dois
+  // passos, pra não repetir o tratamento de resposta inválida/rede fora do ar.
+  async _publicPost(path, body) {
+    try {
+      const res = await fetch(`${API_BASE}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const text = await res.text();
+      try {
+        const data = JSON.parse(text);
+        if (!res.ok && data.success === undefined) data.success = false;
+        return data;
+      } catch {
+        return { success: false, error: 'Resposta inválida do servidor.' };
+      }
+    } catch (err) {
+      console.error('Erro de conexão:', err);
+      return { success: false, error: 'Não foi possível conectar ao servidor.' };
+    }
+  },
+
+  async forgotPassword(identifier) {
+    return this._publicPost('/auth/forgot-password', { identifier });
+  },
+
+  async resetPassword(identifier, code, password) {
+    return this._publicPost('/auth/reset-password', { identifier, code, password });
+  },
+
   async registerDriver(data) {
     try {
       const res = await fetch(`${API_BASE}/auth/register`, {

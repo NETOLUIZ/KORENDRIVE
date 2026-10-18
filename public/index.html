@@ -111,7 +111,7 @@
         <div id="login-field-password">
           <div class="flex justify-between items-center mb-1.5">
             <label class="block text-xs font-medium text-slate-300">Senha de Acesso</label>
-            <a href="#" class="text-xs text-brand hover:underline">Esqueceu?</a>
+            <a href="#" id="forgot-link" onclick="event.preventDefault(); openForgotPassword()" class="text-xs text-brand hover:underline">Esqueceu?</a>
           </div>
           <div class="relative">
             <span class="material-symbols-outlined absolute left-3.5 top-3 text-slate-500 text-lg">lock</span>
@@ -155,6 +155,65 @@
           <span class="material-symbols-outlined text-base">arrow_forward</span>
         </button>
       </div>
+    </section>
+
+    <!-- ==================== TELA: RECUPERAR SENHA ==================== -->
+    <section id="view-forgot-password" class="screen-view hidden fade-in w-full">
+      <div class="flex items-center justify-between mb-4">
+        <button onclick="navigateTo('login')" class="w-8 h-8 rounded-lg bg-surface-card border border-surface-border flex items-center justify-center text-slate-400 hover:text-white">
+          <span class="material-symbols-outlined text-lg">arrow_back</span>
+        </button>
+      </div>
+
+      <div class="mb-5">
+        <h2 class="text-2xl font-display font-bold text-white">Recuperar senha</h2>
+        <p id="forgot-subtitle" class="text-xs text-slate-400 mt-1">Informe seu e-mail, CPF ou telefone. Vamos enviar um código de 6 dígitos para o seu WhatsApp.</p>
+      </div>
+
+      <!-- Etapa 1: pedir o código -->
+      <form id="form-forgot-request" onsubmit="handleForgotRequest(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1.5">Identificação</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3.5 top-3 text-slate-500 text-lg">person</span>
+            <input id="forgot-input-id" type="text" required placeholder="seu.email@exemplo.com, CPF ou telefone" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition">
+          </div>
+        </div>
+        <button id="forgot-request-btn" type="submit" class="w-full py-3.5 rounded-xl bg-brand hover:bg-brand-dark text-black font-display font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand/20 transition active:scale-[0.98]">
+          <span class="material-symbols-outlined text-xl">chat</span>
+          Enviar código pelo WhatsApp
+        </button>
+      </form>
+
+      <!-- Etapa 2: código + nova senha -->
+      <form id="form-forgot-reset" onsubmit="handleForgotReset(event)" class="space-y-4 hidden">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1.5">Código de 6 dígitos</label>
+          <input id="forgot-input-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required placeholder="000000" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl px-4 py-3 text-center text-xl tracking-[0.5em] font-mono text-white placeholder-slate-600 outline-none transition">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1.5">Nova senha</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3.5 top-3 text-slate-500 text-lg">lock</span>
+            <input id="forgot-input-pwd" type="password" minlength="6" required placeholder="Mínimo de 6 caracteres" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-slate-500 outline-none transition">
+            <button type="button" onclick="togglePasswordVisibility('forgot-input-pwd')" class="absolute right-3 top-3 text-slate-500 hover:text-slate-300">
+              <span class="material-symbols-outlined text-lg">visibility</span>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1.5">Confirmar nova senha</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3.5 top-3 text-slate-500 text-lg">lock</span>
+            <input id="forgot-input-pwd2" type="password" minlength="6" required placeholder="Repita a nova senha" class="w-full bg-surface-card border border-surface-border focus:border-brand rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition">
+          </div>
+        </div>
+        <button type="submit" class="w-full py-3.5 rounded-xl bg-brand hover:bg-brand-dark text-black font-display font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand/20 transition active:scale-[0.98]">
+          <span class="material-symbols-outlined text-xl">lock_reset</span>
+          Redefinir senha
+        </button>
+        <button type="button" id="forgot-resend-btn" onclick="handleForgotResend()" class="w-full py-2 text-xs text-brand hover:underline">Não recebeu? Reenviar código</button>
+      </form>
     </section>
 
     <!-- ==================== TELA: CADASTRO EM ANÁLISE ==================== -->

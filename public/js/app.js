@@ -40,6 +40,10 @@ window.handleToggleStatus = handleToggleStatus;
 window.switchLoginMethod = switchLoginMethod;
 window.togglePasswordVisibility = togglePasswordVisibility;
 window.handleLoginSubmit = handleLoginSubmit;
+window.openForgotPassword = openForgotPassword;
+window.handleForgotRequest = handleForgotRequest;
+window.handleForgotResend = handleForgotResend;
+window.handleForgotReset = handleForgotReset;
 window.handleBiometricLogin = handleBiometricLogin;
 window.handleRegisterStep1 = handleRegisterStep1;
 window.handleRegisterStep2 = handleRegisterStep2;
@@ -530,6 +534,80 @@ async function handleLoginSubmit(event) {
     }
   } catch (err) {
     showToast('Erro ao autenticar. Tente novamente.');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Recuperação de senha (código por WhatsApp)
+// ---------------------------------------------------------------------------
+// Guarda o identificador entre as duas etapas; o código nunca é guardado aqui.
+let forgotIdentifier = '';
+
+function showForgotStep(step) {
+  document.getElementById('form-forgot-request').classList.toggle('hidden', step !== 1);
+  document.getElementById('form-forgot-reset').classList.toggle('hidden', step !== 2);
+  document.getElementById('forgot-subtitle').textContent = step === 1
+    ? 'Informe seu e-mail, CPF ou telefone. Vamos enviar um código de 6 dígitos para o seu WhatsApp.'
+    : 'Digite o código que chegou no seu WhatsApp e escolha a nova senha.';
+}
+
+function openForgotPassword() {
+  // Reaproveita o que a pessoa já digitou no login.
+  document.getElementById('forgot-input-id').value = document.getElementById('login-input-id').value.trim();
+  document.getElementById('form-forgot-reset').reset();
+  showForgotStep(1);
+  navigateTo('forgot-password');
+}
+
+async function requestResetCode(identifier) {
+  const res = await api.forgotPassword(identifier);
+  if (res.success) {
+    forgotIdentifier = identifier;
+    showToast('Se a conta existir, o código foi enviado por WhatsApp.');
+    showForgotStep(2);
+    document.getElementById('forgot-input-code').focus();
+  } else {
+    showToast(res.error || 'Não foi possível enviar o código.');
+  }
+  return res;
+}
+
+async function handleForgotRequest(event) {
+  event.preventDefault();
+  const btn = document.getElementById('forgot-request-btn');
+  btn.disabled = true;
+  try {
+    await requestResetCode(document.getElementById('forgot-input-id').value.trim());
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function handleForgotResend() {
+  const btn = document.getElementById('forgot-resend-btn');
+  btn.disabled = true;
+  await requestResetCode(forgotIdentifier);
+  // O servidor segura reenvios por 60s; o botão fica travado o mesmo tempo
+  // pra a pessoa não achar que clicou e nada aconteceu.
+  setTimeout(() => { btn.disabled = false; }, 60000);
+}
+
+async function handleForgotReset(event) {
+  event.preventDefault();
+  const code = document.getElementById('forgot-input-code').value.trim();
+  const pwd = document.getElementById('forgot-input-pwd').value;
+  const pwd2 = document.getElementById('forgot-input-pwd2').value;
+
+  if (pwd !== pwd2) return showToast('As senhas não conferem.');
+
+  const res = await api.resetPassword(forgotIdentifier, code, pwd);
+  if (res.success) {
+    showToast(res.message || 'Senha redefinida!');
+    document.getElementById('login-input-id').value = forgotIdentifier;
+    document.getElementById('login-input-pwd').value = '';
+    navigateTo('login');
+  } else {
+    showToast(res.error || 'Não foi possível redefinir a senha.');
   }
 }
 
