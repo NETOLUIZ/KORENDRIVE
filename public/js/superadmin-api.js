@@ -132,6 +132,15 @@ export const superadminApi = {
     return { ok: res.ok, ...data };
   },
 
+  async setDriverPassword(driverId, password) {
+    const res = await authFetch(`/drivers/${driverId}/password`, {
+      method: 'PATCH',
+      body: JSON.stringify({ password })
+    });
+    const data = await res.json();
+    return { ok: res.ok, ...data };
+  },
+
   async logout() {
     try { await authFetch('/logout', { method: 'POST' }); } catch (e) {}
     setToken(null);

@@ -526,6 +526,27 @@
     </div>
   </div>
 
+  <!-- Modal de Alterar Senha do Motorista -->
+  <div id="modal-driver-password" class="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <form onsubmit="handleDriverPasswordSubmit(event)" class="sa-card w-full max-w-sm p-5 space-y-4 sa-fade-in">
+      <div class="flex items-center justify-between">
+        <h3 class="text-[14px] font-bold text-satext1">Alterar senha</h3>
+        <button type="button" onclick="closeDriverPasswordModal()" class="w-7 h-7 rounded-lg bg-sabg2 flex items-center justify-center text-satext2 hover:text-satext1">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+      <p id="driver-password-who" class="text-[12px] text-satext2"></p>
+      <div class="relative">
+        <input id="driver-password-input" type="password" minlength="6" required placeholder="Nova senha (mínimo 6 caracteres)" class="w-full bg-sabg2 border border-saborder focus:border-sagreen rounded-xl px-3 py-2.5 pr-10 text-[13px] text-satext1 outline-none">
+        <button type="button" onclick="togglePasswordVisibility('driver-password-input')" class="absolute right-3 top-2.5 text-satext2 hover:text-satext1">
+          <span class="material-symbols-outlined text-lg">visibility</span>
+        </button>
+      </div>
+      <p class="text-[11px] text-satext2">O motorista será desconectado de todos os aparelhos e precisará entrar com a nova senha.</p>
+      <button type="submit" class="sa-btn-primary w-full py-2.5 rounded-xl text-[13px]">Salvar nova senha</button>
+    </form>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 bg-sacard border border-sagreen/40 text-satext1 px-4 py-2.5 rounded-full text-[13px] shadow-2xl flex items-center gap-2 pointer-events-none transition-all duration-300 opacity-0 -translate-y-4 z-[100]">
     <span class="material-symbols-outlined text-sagreen text-base">check_circle</span>

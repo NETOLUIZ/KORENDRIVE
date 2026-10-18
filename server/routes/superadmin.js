@@ -167,6 +167,26 @@ router.patch('/drivers/:id/approval', requireSuperAdmin, withDbContext, asyncHan
   });
 }));
 
+// Super admin define uma nova senha pro motorista independente (ex: ele perdeu
+// o acesso e o WhatsApp de recuperação não chega). Derruba as sessões abertas,
+// pra o login antigo não continuar valendo depois da troca.
+router.patch('/drivers/:id/password', requireSuperAdmin, withDbContext, asyncHandler(async (req, res) => {
+  const password = String(req.body.password || '');
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'A senha precisa ter pelo menos 6 caracteres.' });
+  }
+
+  const { hash, salt } = hashPassword(password);
+  const { rowCount } = await req.db.query(
+    'UPDATE drivers SET password_hash = $1, password_salt = $2 WHERE id = $3 AND admin_id IS NULL',
+    [hash, salt, req.params.id]
+  );
+  if (!rowCount) return res.status(404).json({ error: 'Motorista não encontrado' });
+
+  await req.db.query('DELETE FROM sessions WHERE driver_id = $1', [req.params.id]);
+  res.json({ success: true });
+}));
+
 router.get('/companies', requireSuperAdmin, withDbContext, asyncHandler(async (req, res) => {
   const { rows } = await req.db.query(`SELECT c.*, a.name AS admin_name, a.email AS admin_email,
     (SELECT COUNT(*) FROM drivers d WHERE d.admin_id = c.admin_id) AS driver_count

@@ -30,6 +30,9 @@ window.toggleRowMenu = toggleRowMenu;
 window.togglePasswordVisibility = togglePasswordVisibility;
 window.openDriverReviewModal = openDriverReviewModal;
 window.closeDriverReviewModal = closeDriverReviewModal;
+window.openDriverPasswordModal = openDriverPasswordModal;
+window.closeDriverPasswordModal = closeDriverPasswordModal;
+window.handleDriverPasswordSubmit = handleDriverPasswordSubmit;
 window.handleApproveDriverClick = handleApproveDriverClick;
 window.handleRejectDriverClick = handleRejectDriverClick;
 window.toggleCompanyForm = toggleCompanyForm;
@@ -741,9 +744,46 @@ function renderIndependentDriversTable() {
         <button onclick="openDriverReviewModal(${d.id})" class="text-sagreen font-semibold hover:underline">
           ${d.approval_status === 'pending' ? 'Revisar' : 'Ver'}
         </button>
+        <button onclick="openDriverPasswordModal(${d.id})" class="ml-3 text-satext2 font-semibold hover:text-satext1 hover:underline">
+          Senha
+        </button>
       </td>
     </tr>
   `).join('');
+}
+
+// Alterar a senha de um motorista independente — o super admin digita a nova
+// senha e passa pro motorista por fora (ex: WhatsApp).
+function openDriverPasswordModal(id) {
+  const d = state.independentDrivers.find(x => x.id === id);
+  if (!d) return;
+  state.passwordDriverId = id;
+  document.getElementById('driver-password-who').textContent = `${d.name} — ${d.email}`;
+  document.getElementById('driver-password-input').value = '';
+  const modal = document.getElementById('modal-driver-password');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.getElementById('driver-password-input').focus();
+}
+
+function closeDriverPasswordModal() {
+  const modal = document.getElementById('modal-driver-password');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  document.getElementById('driver-password-input').value = '';
+  state.passwordDriverId = null;
+}
+
+async function handleDriverPasswordSubmit(event) {
+  event.preventDefault();
+  if (!state.passwordDriverId) return;
+  const res = await superadminApi.setDriverPassword(state.passwordDriverId, document.getElementById('driver-password-input').value);
+  if (res.ok && res.success) {
+    showToast('Senha alterada!');
+    closeDriverPasswordModal();
+  } else {
+    showToast(res.error || 'Erro ao alterar senha.');
+  }
 }
 
 async function openDriverReviewModal(id) {
