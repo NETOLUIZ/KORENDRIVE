@@ -744,8 +744,9 @@ function renderIndependentDriversTable() {
         <button onclick="openDriverReviewModal(${d.id})" class="text-sagreen font-semibold hover:underline">
           ${d.approval_status === 'pending' ? 'Revisar' : 'Ver'}
         </button>
-        <button onclick="openDriverPasswordModal(${d.id})" class="ml-3 text-satext2 font-semibold hover:text-satext1 hover:underline">
-          Senha
+        <button onclick="openDriverPasswordModal(${d.id})" class="ml-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-saborder bg-sabg2 text-satext1 font-semibold hover:border-sagreen hover:text-sagreen transition">
+          <span class="material-symbols-outlined text-sm">lock_reset</span>
+          Editar senha
         </button>
       </td>
     </tr>
